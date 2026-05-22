@@ -28,11 +28,16 @@ Mi unidad/
 ### Pasos
 
 1. Hacé click en **"Abrir en Colab"** arriba
-2. Ejecutá la **Celda 1** (instala dependencias y clona el repo — ~1 minuto)
-3. Modificá la **Celda 2** con el mes que querés analizar y la ruta a tu Drive
-4. Ejecutá **"Ejecutar todo"** → genera mapa, rankings y lo guarda en tu Drive
+2. Ejecutá la **Celda 1** — instala dependencias y clona el repo (~1 minuto)
+3. En la **Celda 2** cambiá solo el mes (`MES = '042026'`) — las carpetas de Drive ya están configuradas
+4. Ejecutá la **Celda 3** y autorizá el acceso a Google Drive cuando te lo pide
+5. Ejecutá todo lo demás — descarga los archivos del mes automáticamente y genera el mapa
 
-> Los datos SEPA para 2024-2026 están en: [Google Drive compartido](https://drive.google.com/drive/folders/1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I)
+**No hace falta copiar nada a tu Drive.** El notebook toma los datos directamente de las carpetas compartidas de INECO:
+- 2018-2023: [Google Drive histórico](https://drive.google.com/drive/folders/13GONeBs5lQCSUdBioHYk-8GhfDtIyliD)
+- 2024-presente: [Google Drive reciente](https://drive.google.com/drive/folders/1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I) (se actualiza cada mes)
+
+Los outputs (mapa HTML, rankings PNG) se guardan automáticamente en `outputs/MMAAAA/` dentro de la carpeta de Drive.
 
 ---
 
