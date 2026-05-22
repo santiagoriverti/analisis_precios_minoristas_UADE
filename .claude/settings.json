@@ -21,6 +21,8 @@
     ".claude/skills/si-review",
     ".claude/skills/si-promote",
     ".claude/skills/si-extract",
+    ".claude/skills/barrios-caba",
+    ".claude/skills/informe-mensual",
     ".claude/skills/data-quality-auditor",
     ".claude/skills/statistical-analyst",
     ".claude/skills/senior-data-scientist",

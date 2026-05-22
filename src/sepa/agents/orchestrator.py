@@ -1,15 +1,10 @@
-"""Orquestador multi-agente: coordina el análisis usando la API de Anthropic.
+"""Orquestador multi-agente: coordina el análisis ICM-UADE usando la API de Anthropic.
 
 Arquitectura:
-  - SEPAOrchestrator es el punto de entrada principal (CLI o notebook)
-  - Usa Claude claude-sonnet-4-6 como modelo base con prompt caching
-  - Los agentes especializados se invocan via tool_use
-  - El estado se persiste en SQLite via MemoryManager
-
-Uso:
-    from sepa.agents.orchestrator import SEPAOrchestrator
-    agent = SEPAOrchestrator()
-    result = agent.chat("Procesá el ZIP diario del 2026-05-01 y generá el mapa")
+  - SEPAOrchestrator: punto de entrada principal (CLI o notebook)
+  - Usa claude-sonnet-4-6 con prompt caching para reducir costos
+  - Los análisis se invocan via tool_use
+  - Estado persistente en SQLite via MemoryManager
 """
 from __future__ import annotations
 
@@ -23,7 +18,8 @@ from typing import Any
 from .memory import MemoryManager
 from .tools import TOOLS_SCHEMA, dispatch_tool
 from ..config.settings import (
-    INPUT_DIR, OUTPUT_DIR, PRODUCTS_DIR, CACHE_DIR, MASTERS_DIR, VALID_FROM
+    INPUT_DIR, OUTPUT_DIR, PRODUCTS_DIR, CACHE_DIR, MASTERS_DIR,
+    VALID_FROM, POPULATION_WEIGHTS,
 )
 
 log = logging.getLogger(__name__)
@@ -34,23 +30,25 @@ SYSTEM_PROMPT = """Sos el asistente de análisis de precios del ICM-UADE (Índic
 
 Tu rol es ayudar a procesar datos del SEPA (Sistema Electrónico de Publicidad de Precios Argentinos) y generar análisis de precios minoristas para Argentina.
 
-Capacidades disponibles (via tools):
-1. Procesar ZIPs diarios del SEPA → productos únicos + canasta por provincia
+Capacidades (via tools):
+1. Procesar ZIPs diarios → productos únicos + canasta por provincia
 2. Procesar semestres completos → series temporales de canasta
 3. Consolidar series multi-año y comparar contra IPC INDEC
-4. Generar mapas interactivos por sucursal
-5. Rankings de cadenas (nacional y AMBA)
-6. Listar datos disponibles y estado de procesamiento
+4. Generar mapas interactivos por sucursal (Folium)
+5. Rankings de cadenas nacional y AMBA
+6. Ranking de barrios CABA (por coordenadas, 48 barrios)
+7. Listar datos disponibles y estado del procesamiento
 
 Contexto metodológico:
-- La canasta tiene 30 productos fijos con cantidades mensuales calibradas para hogar de 4 personas
-- Se excluyen farmacias, estaciones de servicio y e-commerce
-- Los precios se validan detectando el factor de escala automáticamente
-- Para la serie válida: desde mayo 2023 (cobertura estable del SEPA)
-- Ponderación nacional: Censo 2022
+- Canasta: 30 productos fijos con cantidades mensuales calibradas para hogar de 4 personas
+- Período válido: desde mayo 2023 (cobertura SEPA estable)
+- Variaciones de mayo y junio 2023: anuladas (panel en consolidación)
+- Cadenas excluidas: YPF/FULL (19), Mercado Libre (2013), Easy (3001), id 4
+- Sucursales excluidas: tipo "Web" y CABA con coordenadas fuera del bounding box
+- Ponderación nacional: Censo 2022, 24 provincias
+- Escala de precios: detectada automáticamente con Sal, Fideos, Lavandina como referencia
 
-Respondé en español, con precisión técnica y orientado a resultados concretos.
-Si el usuario pide un análisis, ejecutá la tool correspondiente y comunicá los resultados.
+Respondé en español argentino (voseo). Si el usuario pide un análisis, ejecutá la tool correspondiente y comunicá los resultados con claridad.
 """
 
 
@@ -60,6 +58,7 @@ class SEPAOrchestrator:
     def __init__(self, db_path: Path | None = None):
         try:
             import anthropic
+            self._anthropic = anthropic
             self.client = anthropic.Anthropic()
         except ImportError:
             raise ImportError("Instalar anthropic: pip install anthropic")
@@ -74,11 +73,9 @@ class SEPAOrchestrator:
 
         Soporta múltiples rondas de tool_use automáticamente.
         """
-        import anthropic
-
         self.messages.append({"role": "user", "content": user_message})
 
-        for turn in range(max_turns):
+        for _ in range(max_turns):
             response = self.client.messages.create(
                 model=MODEL,
                 max_tokens=4096,
@@ -86,28 +83,25 @@ class SEPAOrchestrator:
                     {
                         "type": "text",
                         "text": SYSTEM_PROMPT,
-                        "cache_control": {"type": "ephemeral"},  # prompt caching
+                        "cache_control": {"type": "ephemeral"},
                     }
                 ],
                 tools=TOOLS_SCHEMA,
                 messages=self.messages,
             )
 
-            # Añade respuesta del asistente al historial
             self.messages.append({"role": "assistant", "content": response.content})
 
-            # Si terminó sin tool_use → retornar texto
             if response.stop_reason == "end_turn":
                 text = _extract_text(response.content)
                 self._persist_session(user_message)
                 return text
 
-            # Procesar tool_use
             if response.stop_reason == "tool_use":
                 tool_results = []
                 for block in response.content:
                     if block.type == "tool_use":
-                        log.info("Tool call: %s(%s)", block.name, json.dumps(block.input)[:120])
+                        log.info("Tool: %s(%s)", block.name, json.dumps(block.input)[:120])
                         try:
                             result = dispatch_tool(block.name, block.input)
                             result_text = json.dumps(result, ensure_ascii=False, default=str)
@@ -130,7 +124,7 @@ class SEPAOrchestrator:
         return "Análisis completado."
 
     def _persist_session(self, task: str):
-        self.memory.save_session(self.session_id, task, self.messages[-20:])  # últimos 20 mensajes
+        self.memory.save_session(self.session_id, task, self.messages[-20:])
 
     def reset(self):
         """Reinicia el historial de conversación."""
@@ -138,12 +132,17 @@ class SEPAOrchestrator:
         self.session_id = str(uuid.uuid4())[:8]
 
 
-# ── Implementaciones de tools de alto nivel ───────────────────────────────
+def _extract_text(content: list) -> str:
+    parts = [block.text for block in content if hasattr(block, "text")]
+    return "\n".join(parts).strip()
+
+
+# ── Implementaciones de tools ──────────────────────────────────────────────
 
 def _run_daily(zip_path: str, output_label: str | None = None) -> dict:
-    """Procesa un ZIP diario completo."""
+    """Procesa un ZIP diario del SEPA."""
     from ..pipeline.loader import read_daily_zip, load_master_products, load_master_branches
-    from ..pipeline.cleaner import clean_prices, normalize_ean_column
+    from ..pipeline.cleaner import normalize_ean_column
     from ..pipeline.enricher import enrich_with_products, enrich_with_branches, filter_excluded_chains
 
     p = Path(zip_path)
@@ -164,7 +163,6 @@ def _run_daily(zip_path: str, output_label: str | None = None) -> dict:
         df = normalize_ean_column(df, "productos_ean")
         df = filter_excluded_chains(df)
 
-        # Enriquece con maestros si están disponibles
         try:
             mp = load_master_products()
             df = enrich_with_products(df, mp)
@@ -176,8 +174,9 @@ def _run_daily(zip_path: str, output_label: str | None = None) -> dict:
         except FileNotFoundError:
             pass
 
-        n_unique = df["ean_norm"].nunique()
-        n_branches = df[["id_comercio", "id_bandera", "id_sucursal"]].drop_duplicates().__len__() if all(c in df.columns for c in ["id_comercio", "id_bandera", "id_sucursal"]) else "N/D"
+        n_unique = int(df["ean_norm"].nunique())
+        branch_cols = [c for c in ["id_comercio", "id_bandera", "id_sucursal"] if c in df.columns]
+        n_branches = int(len(df[branch_cols].drop_duplicates())) if branch_cols else "N/D"
 
         mem.complete_run(run_id)
         return {
@@ -185,7 +184,6 @@ def _run_daily(zip_path: str, output_label: str | None = None) -> dict:
             "label": label,
             "n_productos_unicos": n_unique,
             "n_sucursales": n_branches,
-            "nota": "Maestros no disponibles — enriquecimiento limitado" if "marca" not in df.columns else "Procesamiento completo",
         }
     except Exception as e:
         mem.fail_run(run_id, str(e))
@@ -194,29 +192,32 @@ def _run_daily(zip_path: str, output_label: str | None = None) -> dict:
 
 def _run_semester(semester: str, source_path: str | None = None) -> dict:
     """Procesa un semestre del SEPA."""
-    from ..pipeline.loader import iter_semester_csvgz, load_master_products, load_master_branches
+    import pandas as pd
+    from ..pipeline.loader import iter_semester_csvgz, load_master_branches
     from ..pipeline.cleaner import clean_prices
     from ..pipeline.enricher import enrich_with_branches, filter_excluded_chains
-    from ..pipeline.aggregator import compute_monthly_avg, build_branch_basket, aggregate_by_province, aggregate_national_weighted
+    from ..pipeline.aggregator import (
+        compute_monthly_avg, build_branch_basket,
+        aggregate_by_province, aggregate_by_region, aggregate_national_weighted,
+    )
     from ..viz.exports import save_parquet, save_semester_excel
-    import pandas as pd
+    from ..config.canasta import CANASTA_EANS
 
     if source_path is None:
         candidates = list((INPUT_DIR / "semestrales").glob(f"*{semester}*.zip"))
         if not candidates:
-            return {"error": f"No se encontró ZIP para semestre {semester} en {INPUT_DIR / 'semestrales'}"}
+            return {"error": f"ZIP no encontrado para {semester} en {INPUT_DIR / 'semestrales'}"}
         source_path = str(candidates[0])
 
     mem = MemoryManager()
     run_id = mem.start_run("semester", period=semester)
 
     try:
-        from ..config.canasta import CANASTA_EANS
         frames = []
-        for df_chunk in iter_semester_csvgz(Path(source_path), ean_filter=CANASTA_EANS):
-            df_chunk = filter_excluded_chains(df_chunk)
-            df_chunk = clean_prices(df_chunk, auto_scale=True)
-            frames.append(df_chunk)
+        for chunk in iter_semester_csvgz(Path(source_path), ean_filter=CANASTA_EANS):
+            chunk = filter_excluded_chains(chunk)
+            chunk = clean_prices(chunk, auto_scale=True)
+            frames.append(chunk)
             gc.collect()
 
         if not frames:
@@ -233,26 +234,31 @@ def _run_semester(semester: str, source_path: str | None = None) -> dict:
             df_enriched = df_long
 
         df_monthly = compute_monthly_avg(df_enriched)
-        df_branch = build_branch_basket(df_monthly)
+        df_branch  = build_branch_basket(df_monthly)
 
-        cache_path = CACHE_DIR / f"canasta_branch_{semester}.parquet"
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        cache_path = CACHE_DIR / f"canasta_branch_{semester}.parquet"
         save_parquet(df_branch, cache_path)
-        mem.register_artifact(run_id, "parquet", cache_path, period=semester, description="Canasta por sucursal")
+        mem.register_artifact(run_id, "parquet", cache_path, period=semester)
 
         df_prov = aggregate_by_province(df_branch, df_enriched) if "provincia" in df_enriched.columns else pd.DataFrame()
-        df_nat = aggregate_national_weighted(df_prov) if not df_prov.empty else pd.DataFrame()
+        df_reg  = aggregate_by_region(df_prov) if not df_prov.empty else pd.DataFrame()
+        df_nat  = aggregate_national_weighted(df_prov) if not df_prov.empty else pd.DataFrame()
 
-        excel_path = OUTPUT_DIR / f"canasta_{semester}_serie.xlsx"
+        df_pesos = pd.DataFrame([
+            {"provincia": k, "poblacion": v, "peso": v / sum(POPULATION_WEIGHTS.values())}
+            for k, v in POPULATION_WEIGHTS.items()
+        ])
+
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        save_semester_excel(
+        excel_path = save_semester_excel(
             semester=semester,
             df_cobertura=pd.DataFrame(),
             df_diaria=None,
             df_provincia=df_prov,
-            df_region=None,
+            df_region=df_reg,
             df_nacional=df_nat,
-            df_pesos=pd.DataFrame(list({"provincia": k, "peso": v} for k, v in __import__("sepa.config.settings", fromlist=["POPULATION_WEIGHTS"]).POPULATION_WEIGHTS.items())),
+            df_pesos=df_pesos,
             output_dir=OUTPUT_DIR,
         )
         mem.register_artifact(run_id, "excel", excel_path, period=semester)
@@ -261,7 +267,7 @@ def _run_semester(semester: str, source_path: str | None = None) -> dict:
         return {
             "status": "ok",
             "semester": semester,
-            "n_sucursales": len(df_branch),
+            "n_sucursales": int(len(df_branch)),
             "meses": sorted(df_branch["mes"].unique().tolist()) if "mes" in df_branch.columns else [],
             "output": str(excel_path),
         }
@@ -273,14 +279,15 @@ def _run_semester(semester: str, source_path: str | None = None) -> dict:
 
 def _run_consolidation(from_month: str | None = None) -> dict:
     """Consolida todos los semestres y genera comparativa IPC."""
+    import pandas as pd
     from ..analysis.timeseries import consolidate_semesters, build_comparative, load_ipc
     from ..viz.exports import save_consolidated_excel
     from ..viz.charts import plot_index_series, plot_monthly_variations
-    import pandas as pd
+    from ..config.settings import NULL_VARIATION_MONTHS
 
     excel_files = sorted(OUTPUT_DIR.glob("canasta_*_serie.xlsx")) if OUTPUT_DIR.exists() else []
     if not excel_files:
-        return {"error": "No hay archivos de semestres en output/. Procesar semestres primero."}
+        return {"error": "No hay archivos semestrales en data/output/. Procesá semestres primero."}
 
     from_month = from_month or VALID_FROM
     mem = MemoryManager()
@@ -288,15 +295,15 @@ def _run_consolidation(from_month: str | None = None) -> dict:
 
     try:
         series = consolidate_semesters(excel_files)
-        df_nat = series["nacional"]
+        df_nat  = series["nacional"]
         df_prov = series["provincia"]
-        df_reg = series["region"]
+        df_reg  = series["region"]
 
         try:
-            df_ipc = load_ipc()
+            df_ipc  = load_ipc()
             df_comp = build_comparative(df_nat, df_ipc, base_month=from_month)
         except FileNotFoundError:
-            df_ipc = pd.DataFrame()
+            df_ipc  = pd.DataFrame()
             df_comp = pd.DataFrame()
 
         out_excel = OUTPUT_DIR / "canasta_SEPA_consolidado.xlsx"
@@ -304,10 +311,10 @@ def _run_consolidation(from_month: str | None = None) -> dict:
 
         PRODUCTS_DIR.mkdir(parents=True, exist_ok=True)
         chart_paths = []
-        if not df_comp.empty:
-            p = plot_index_series(df_comp, PRODUCTS_DIR / "indices_consolidado.png", from_month=from_month)
+        if not df_comp.empty and "indice" in df_comp.columns:
+            p1 = plot_index_series(df_comp, PRODUCTS_DIR / "indices_consolidado.png", from_month=from_month)
             p2 = plot_monthly_variations(df_comp, PRODUCTS_DIR / "variaciones_consolidado.png", from_month=from_month)
-            chart_paths = [str(p), str(p2)]
+            chart_paths = [str(p1), str(p2)]
 
         mem.complete_run(run_id, str(out_excel))
         return {
@@ -323,50 +330,16 @@ def _run_consolidation(from_month: str | None = None) -> dict:
 
 
 def _generate_map(mes: str | None = None) -> dict:
-    """Genera el mapa interactivo por sucursal."""
+    """Genera el mapa interactivo Folium por sucursal."""
+    import pandas as pd
     from ..viz.maps import make_branch_map
     from ..viz.exports import load_parquet
-    import pandas as pd
-
-    parquets = sorted(CACHE_DIR.glob("canasta_branch_*.parquet")) if CACHE_DIR.exists() else []
-    if not parquets:
-        return {"error": "No hay datos de sucursales en cache. Procesar un semestre primero."}
-
-    try:
-        frames = [load_parquet(p) for p in parquets]
-        df_branch = pd.concat(frames, ignore_index=True)
-        if mes:
-            df_branch = df_branch[df_branch["mes"] == mes]
-        if df_branch.empty:
-            return {"error": f"Sin datos para mes={mes}"}
-        mes = df_branch["mes"].max()
-
-        from ..pipeline.loader import load_master_branches
-        from ..pipeline.enricher import enrich_with_branches
-        df_meta = load_master_branches()
-        branch_cols = [c for c in ["id_comercio", "id_bandera", "id_sucursal"] if c in df_branch.columns]
-        df_enriched = enrich_with_branches(df_branch[branch_cols].drop_duplicates(), df_meta)
-
-        out = PRODUCTS_DIR / f"mapa_sucursales_{mes.replace('-', '')}.html"
-        PRODUCTS_DIR.mkdir(parents=True, exist_ok=True)
-        make_branch_map(df_branch, df_enriched, out, mes=mes)
-        return {"status": "ok", "mes": mes, "output": str(out), "n_sucursales": len(df_branch)}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def _generate_rankings(mes: str | None = None) -> dict:
-    """Genera los rankings de cadenas."""
-    from ..viz.exports import load_parquet
-    from ..analysis.chains import national_ranking, amba_ranking
-    from ..viz.charts import plot_chain_ranking
     from ..pipeline.loader import load_master_branches
     from ..pipeline.enricher import enrich_with_branches
-    import pandas as pd
 
     parquets = sorted(CACHE_DIR.glob("canasta_branch_*.parquet")) if CACHE_DIR.exists() else []
     if not parquets:
-        return {"error": "Sin datos en cache."}
+        return {"error": "Sin cache de sucursales. Procesá un semestre primero."}
 
     try:
         frames = [load_parquet(p) for p in parquets]
@@ -380,20 +353,56 @@ def _generate_rankings(mes: str | None = None) -> dict:
         branch_cols = [c for c in ["id_comercio", "id_bandera", "id_sucursal"] if c in df_branch.columns]
         df_enriched = enrich_with_branches(df_branch[branch_cols].drop_duplicates(), mb)
 
-        rank_nac = national_ranking(df_branch, df_enriched, mes=mes)
+        out = PRODUCTS_DIR / f"mapa_canasta_pais_{mes.replace('-', '')}_filtros.html"
+        PRODUCTS_DIR.mkdir(parents=True, exist_ok=True)
+        make_branch_map(df_branch, df_enriched, out, mes=mes)
+        return {"status": "ok", "mes": mes, "output": str(out), "n_sucursales": int(len(df_branch))}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _generate_rankings(mes: str | None = None) -> dict:
+    """Genera rankings de cadenas y barrios CABA."""
+    import pandas as pd
+    from ..viz.exports import load_parquet
+    from ..analysis.chains import national_ranking, amba_ranking
+    from ..analysis.basket import barrio_ranking_caba
+    from ..viz.charts import plot_chain_ranking
+    from ..pipeline.loader import load_master_branches
+    from ..pipeline.enricher import enrich_with_branches
+
+    parquets = sorted(CACHE_DIR.glob("canasta_branch_*.parquet")) if CACHE_DIR.exists() else []
+    if not parquets:
+        return {"error": "Sin cache."}
+
+    try:
+        frames = [load_parquet(p) for p in parquets]
+        df_branch = pd.concat(frames, ignore_index=True)
+        if mes:
+            df_branch = df_branch[df_branch["mes"] == mes]
+        mes = df_branch["mes"].max()
+        df_branch = df_branch[df_branch["mes"] == mes]
+
+        mb = load_master_branches()
+        branch_cols = [c for c in ["id_comercio", "id_bandera", "id_sucursal"] if c in df_branch.columns]
+        df_enriched = enrich_with_branches(df_branch[branch_cols].drop_duplicates(), mb)
+
+        rank_nac  = national_ranking(df_branch, df_enriched, mes=mes)
         rank_amba = amba_ranking(df_branch, df_enriched, mes=mes)
+        rank_barrios = barrio_ranking_caba(df_branch, df_enriched, mes=mes)
 
         PRODUCTS_DIR.mkdir(parents=True, exist_ok=True)
-        p1 = plot_chain_ranking(rank_nac, PRODUCTS_DIR / f"ranking_nacional_{mes.replace('-','')}.png",
-                                 title=f"Ranking Nacional — {mes}")
-        p2 = plot_chain_ranking(rank_amba, PRODUCTS_DIR / f"ranking_amba_{mes.replace('-','')}.png",
-                                 title=f"Ranking AMBA — {mes}")
+        mes_tag = mes.replace("-", "")
+        p1 = plot_chain_ranking(rank_nac,  PRODUCTS_DIR / f"ranking_cadenas_nacional_{mes_tag}.png", title=f"Ranking Nacional — {mes}")
+        p2 = plot_chain_ranking(rank_amba, PRODUCTS_DIR / f"ranking_cadenas_amba_{mes_tag}.png",    title=f"Ranking AMBA — {mes}")
+
         return {
             "status": "ok", "mes": mes,
             "ranking_nacional": str(p1),
             "ranking_amba": str(p2),
-            "n_cadenas_nacional": len(rank_nac),
-            "n_cadenas_amba": len(rank_amba),
+            "n_cadenas_nacional": int(len(rank_nac)),
+            "n_cadenas_amba": int(len(rank_amba)),
+            "n_barrios_caba": int(len(rank_barrios)),
         }
     except Exception as e:
         return {"error": str(e)}

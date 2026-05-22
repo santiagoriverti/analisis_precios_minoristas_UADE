@@ -7,33 +7,43 @@ IS_COLAB = "COLAB_RELEASE_TAG" in os.environ or os.path.exists("/content")
 if IS_COLAB:
     PROJECT_ROOT = Path("/content/analisis_precios_minoristas_UADE")
 else:
-    # src/sepa/config/settings.py → project root is 3 levels up
+    # src/sepa/config/settings.py → raíz del proyecto es 3 niveles arriba
     PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-DATA_DIR = PROJECT_ROOT / "data"
-INPUT_DIR = DATA_DIR / "input"
-MASTERS_DIR = DATA_DIR / "masters"
-CACHE_DIR = DATA_DIR / "cache"
-OUTPUT_DIR = DATA_DIR / "output"
+DATA_DIR     = PROJECT_ROOT / "data"
+INPUT_DIR    = DATA_DIR / "input"
+MASTERS_DIR  = DATA_DIR / "masters"
+CACHE_DIR    = DATA_DIR / "cache"
+OUTPUT_DIR   = DATA_DIR / "output"
 PRODUCTS_DIR = PROJECT_ROOT / "products"
-MEMORY_DIR = PROJECT_ROOT / "memory"
-MEMORY_DB = MEMORY_DIR / "state.db"
+MEMORY_DIR   = PROJECT_ROOT / "memory"
+MEMORY_DB    = MEMORY_DIR / "state.db"
 
-# ── Maestros (nombres por defecto, configurables) ──────────────────────────
+# ── Nombres de archivos maestros ───────────────────────────────────────────
 MASTER_PRODUCTS_FILENAME = "Maestro de Productos Interno.xlsx"
 MASTER_BRANCHES_FILENAME = "maestro_sucursales_completo.xlsx"
-IPC_FILENAME = "IPC.xlsx"
+IPC_FILENAME             = "IPC.xlsx"
+GEOJSON_FILENAME         = "ar.json"
 
-# ── Filtros de calidad ──────────────────────────────────────────────────────
-MIN_VALID_PRICE = 5.0          # precios menores son placeholders
-MIN_BASKET_PRODUCTS = 20       # mínimo de productos propios para incluir una sucursal
+# ── Filtros de calidad ─────────────────────────────────────────────────────
+MIN_VALID_PRICE    = 5.0   # precios menores se consideran placeholders
+MIN_BASKET_PRODUCTS = 20   # mínimo de productos propios para incluir sucursal
 TOTAL_BASKET_PRODUCTS = 30
 
-# ── Coordenadas válidas Argentina ───────────────────────────────────────────
+# ── Filtros de sucursales ──────────────────────────────────────────────────
+EXCLUIR_TIPO_WEB = True    # excluir sucursales de tipo "Web" (sin ubicación física)
+
+# ── Coordenadas válidas Argentina ──────────────────────────────────────────
 LAT_MIN, LAT_MAX = -55.0, -22.0
 LON_MIN, LON_MAX = -73.0, -53.0
 
-# ── Semestres disponibles ───────────────────────────────────────────────────
+# ── Período válido de análisis ─────────────────────────────────────────────
+# Antes de mayo 2023 la cobertura SEPA era heterogénea (muchos EANs ausentes)
+VALID_FROM = "2023-05"
+# Variaciones de estos meses se anulan (panel SEPA en consolidación)
+NULL_VARIATION_MONTHS = ["2023-05", "2023-06"]
+
+# ── Semestres disponibles (para procesamiento automático) ──────────────────
 SEMESTERS = [
     "2022A", "2022B",
     "2023A", "2023B",
@@ -42,34 +52,32 @@ SEMESTERS = [
     "2026A",
 ]
 
-# Primer mes con cobertura estable de SEPA
-VALID_FROM = "2023-05"
-
-# ── Pesos poblacionales (Censo 2022) ────────────────────────────────────────
-POPULATION_WEIGHTS = {
-    "Buenos Aires":        17_569_053,
-    "CABA":                 3_075_646,
-    "Catamarca":              429_301,
-    "Chaco":                1_204_541,
-    "Chubut":                 618_994,
-    "Córdoba":              3_978_984,
-    "Corrientes":           1_120_801,
-    "Entre Ríos":           1_385_961,
-    "Formosa":                606_041,
-    "Jujuy":                  795_988,
-    "La Pampa":               365_571,
-    "La Rioja":               393_531,
-    "Mendoza":              2_014_533,
-    "Misiones":             1_273_739,
-    "Neuquén":                664_057,
-    "Río Negro":              747_610,
-    "Salta":                1_441_988,
-    "San Juan":               781_217,
-    "San Luis":               508_328,
-    "Santa Cruz":             333_473,
-    "Santa Fe":             3_536_418,
-    "Santiago del Estero":    978_313,
-    "Tierra del Fuego":       173_432,
-    "Tucumán":              1_694_656,
+# ── Ponderación nacional — Censo INDEC 2022 ────────────────────────────────
+# Total: 45.892.285 habitantes
+POPULATION_WEIGHTS: dict[str, int] = {
+    "Buenos Aires":        17_523_996,
+    "Córdoba":              3_840_905,
+    "Santa Fe":             3_544_908,
+    "CABA":                 3_121_707,
+    "Mendoza":              2_043_540,
+    "Tucumán":              1_731_820,
+    "Salta":                1_441_351,
+    "Entre Ríos":           1_425_578,
+    "Misiones":             1_278_873,
+    "Corrientes":           1_212_696,
+    "Chaco":                1_129_606,
+    "Santiago del Estero":  1_060_906,
+    "San Juan":               822_853,
+    "Jujuy":                  811_611,
+    "Río Negro":              750_768,
+    "Neuquén":                710_814,
+    "Formosa":                607_419,
+    "Chubut":                 592_621,
+    "San Luis":               542_069,
+    "Catamarca":              429_562,
+    "La Rioja":               383_865,
+    "La Pampa":               361_859,
+    "Santa Cruz":             337_226,
+    "Tierra del Fuego":       185_732,
 }
-TOTAL_POPULATION = sum(POPULATION_WEIGHTS.values())
+TOTAL_POPULATION = sum(POPULATION_WEIGHTS.values())  # 45_892_285

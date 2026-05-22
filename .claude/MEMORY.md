@@ -5,35 +5,78 @@ Usar `/si:remember` para agregar, `/si:review` para auditar, `/si:promote` para 
 
 ---
 
-## Decisiones arquitectónicas
+## Identidad del proyecto
 
-- El paquete Python está en `src/sepa/` — siempre hacer `sys.path.insert(0, 'src')` o instalar con `pip install -e .`
-- La canasta tiene 30 EANs fijos definidos en `src/sepa/config/canasta.py` — NO modificar sin documentar la razón
-- La memoria persistente del agente va en `memory/state.db` (SQLite) — NO en archivos temporales
-- Los outputs publicables van en `products/` — los datos intermedios en `data/cache/` (Parquet)
+- **Institución**: INECO — Instituto de Economía, Universidad Argentina de la Empresa (UADE)
+- **Autor**: Santiago Riverti (sriverti@uade.edu.ar)
+- **Producto**: ICM-UADE (Índice de Canasta de Mercado) — informe mensual de prensa
+- **GitHub**: github.com/santiagoriverti/analisis_precios_minoristas_UADE
+- **Idioma de comunicación**: español argentino rioplatense (voseo)
+- **Tipografía numérica**: punto = miles, coma = decimales ($322.566, +3,01%)
 
-## Convenciones de datos SEPA
+## Convenciones de código
 
-- Los EANs deben normalizarse siempre con `.str.lstrip('0')` antes de cualquier join
-- Período válido de análisis: desde 2023-05 (cobertura SEPA estable)
-- Variaciones de mayo y junio 2023 se nullifican (panel en consolidación)
-- El factor de escala se detecta automáticamente pero debe verificarse con los productos de referencia: Sal (7790380000057), Fideos (7792260000101), Lavandina (7790230512009)
+- IDs (id_comercio, id_bandera, id_sucursal) siempre como string en los CSVs del SEPA → convertir a Int32 en enricher
+- EANs: siempre normalizar con `.str.lstrip('0')` antes de cualquier join
+- Separador CSV: PIPE `|` en ZIPs diarios, COMA `,` en .csv.gz mensuales — el loader detecta automáticamente
+- Encoding: UTF-8 primera opción, latin-1 como fallback
+- Período válido: desde `2023-05` (cobertura SEPA estable)
+- Variaciones de `2023-05` y `2023-06` se anulan (`NULL_VARIATION_MONTHS`)
 
-## Cadenas excluidas del análisis
+## Canasta — 30 EANs verificados
 
-IDs excluidos: 4 (Mercado Libre), 19 (FULL), 2013 (Easy), 3001 (Farmacity), 3002 (Simplicity)
+Los EANs correctos están en `src/sepa/config/canasta.py`. Los principales:
+- Sal Celusal 500g: 7790072002080 (referencia para detección de escala)
+- Fideos Favorita 500g: 7790070320285 (referencia)
+- Lavandina Ayudín 1L: 7790132098459 (referencia)
+- Leche Serenísima 1L: 7790742363008
+- Coca Cola lata: 7790895000232
 
-## Rutas de datos (entorno local de Santiago)
+## Cadenas y filtros
 
-- Maestros en: `C:\Users\sriverti\Desktop\INECO\Repositorios\analisis_precios_minoristas_UADE\data\masters\`
-- ZIPs semestrales en: `data/input/semestrales/`
+**Excluidas del análisis** (IDs): 4, 19 (YPF/FULL), 2013 (Mercado Libre), 3001 (Easy)
+**Sucursales Web**: excluir (`sucursales_tipo == 'Web'`)
+**CABA mal clasificadas**: excluir coordenadas fuera de lat[-34.71,-34.53] lon[-58.53,-58.34]
 
-## Semestres procesados
+**Bandera IDs de ChangoMas** (verificado): (11,2)=ChangoMas, (11,4)=Hiper ChangoMas, (11,5)=Mi ChangoMas
+**Hipermercado Libertad**: (16,1)=Hipermercado Libertad, (16,2)=Mini Libertad
 
-(Actualizar al procesar cada semestre)
+## Detección de escala de precios
 
-## Hallazgos a recordar
+Usar medianas de Sal + Fideos + Lavandina:
+- 30–5.000 → factor=1 (precios ya en pesos)
+- 3.000–500.000 → factor=100 (dividir por 100)
+- >500.000 → factor=10.000 (dividir por 10.000)
 
-- Dispersión AMBA (~5.4%) < Nacional (~12.1%) → más competencia en zona metropolitana
-- DIA domina en cobertura (~990 sucursales), pero no es la más barata
-- La escala de precios varió entre semestres — siempre verificar con detect_price_scale()
+## Ponderación nacional (Censo INDEC 2022)
+
+Buenos Aires 17.523.996, Córdoba 3.840.905, Santa Fe 3.544.908, CABA 3.121.707
+Total: 45.892.285 habitantes. Ver `src/sepa/config/settings.py:POPULATION_WEIGHTS`
+
+## Barrios CABA
+
+48 barrios con bounding boxes en `src/sepa/config/geo.py:BARRIOS_CABA_BBOX`.
+Clasificar por coordenadas GPS, NO por nombre de sucursal (evita falsos positivos).
+Caso Belgrano: 33 sucursales por nombre vs. ~28-30 por coordenadas (5 falsos positivos en Boedo).
+
+## Resultados de referencia — Abril 2026
+
+- ICM-UADE nacional ponderado: $322.566 (+3,01% mensual)
+- 2.369 sucursales, 24 provincias, 477 localidades, 14 cadenas
+- Más barata: Hipermercado Libertad ($298.914)
+- Más cara: La Anónima ($335.213)
+- Dispersión nacional: 12,1% | Dispersión AMBA: 5,4%
+
+## Fuentes de datos SEPA
+
+- Portal oficial: https://datos.produccion.gob.ar/dataset/sepa-precios
+- 2018-2023: Google Drive https://drive.google.com/drive/folders/13GONeBs5lQCSUdBioHYk-8GhfDtIyliD
+- 2024-2026: Google Drive https://drive.google.com/drive/folders/1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I
+- IPC INDEC: https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31
+
+## Pendientes del proyecto (al 22-05-2026)
+
+- Procesar mayo 2026 cuando estén disponibles los archivos `052026_pais_parte*COMPLETO.csv.gz`
+- IPC INDEC abril 2026 (publicado ~13 mayo) — actualizar en `data/masters/IPC.xlsx`
+- Mapa coroplético GeoJSON 48 barrios CABA (mejora futura)
+- Cruzamiento con datos socioeconómicos Censo 2022 (futuro)

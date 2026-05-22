@@ -1,31 +1,27 @@
 # ICM-UADE — Análisis de Precios Minoristas SEPA
 
-> **INECO · Instituto de Economía · Universidad Argentina de la Empresa**
+**INECO · Instituto de Economía · Universidad Argentina de la Empresa**  
+**Autor**: Santiago Riverti — sriverti@uade.edu.ar
 
-Sistema unificado de análisis de precios minoristas argentinos basado en datos del **SEPA** (Sistema Electrónico de Publicidad de Precios Argentinos). Construye el **ICM-UADE** (Índice de Canasta de Mercado): 30 productos de consumo masivo valuados mensualmente por sucursal, provincia, región y país.
+Sistema de análisis de precios minoristas argentinos basado en datos del **SEPA** (Sistema Electrónico de Publicidad de Precios Argentinos, Ministerio de Economía). Construye el **ICM-UADE** (Índice de Canasta de Mercado): 30 productos de consumo masivo valuados mensualmente por sucursal, provincia, región, barrio de CABA y país.
 
 ---
 
 ## ¿Qué genera este sistema?
 
-| Output | Descripción |
-|--------|-------------|
-| 🗺️ **Mapa interactivo** | Precio de canasta por sucursal, coloreado verde→rojo, con popup de 30 productos |
-| 📊 **Ranking de cadenas** | Nacional y AMBA por precio promedio de canasta |
-| 🏙️ **Canasta por provincia** | 24 provincias rankeadas con % vs. promedio nacional |
+| Análisis | Output |
+|----------|--------|
+| 🗺️ **Mapa interactivo** | HTML Folium — precio de canasta por sucursal, coloreado verde→rojo, popup con detalle de 30 productos |
+| 📊 **Ranking de cadenas** | PNG — Nacional y AMBA, por precio promedio de canasta |
+| 🏙️ **Ranking de barrios CABA** | 48 barrios clasificados por coordenadas GPS (no por nombre de calle) |
+| 🏛️ **Canasta por provincia** | 24 provincias rankeadas con % vs. promedio nacional |
 | 📈 **Serie temporal** | ICM-UADE mensual desde mayo 2023 con índice base 100 |
-| 📉 **Comparativa IPC** | Canasta vs. IPC INDEC General y Alimentos, brecha acumulada |
+| 📉 **Comparativa IPC** | ICM-UADE vs. IPC INDEC General y Alimentos, brecha acumulada |
+| 📄 **Tabla LaTeX** | Lista para pegar en el informe académico |
 
 ---
 
 ## Instalación
-
-### Requisitos
-
-- Python 3.10 o superior
-- pip
-
-### Clonar e instalar
 
 ```bash
 git clone https://github.com/santiagoriverti/analisis_precios_minoristas_UADE.git
@@ -33,327 +29,129 @@ cd analisis_precios_minoristas_UADE
 pip install -r requirements.txt
 ```
 
-Para desarrollo (incluye Jupyter):
-
-```bash
-pip install -e ".[dev]"
-```
-
-### Variables de entorno (solo para el agente de IA)
-
-```bash
-# Windows PowerShell
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
-
-# Linux / Mac / Google Colab
-export ANTHROPIC_API_KEY="sk-ant-..."
+En Google Colab:
+```python
+!git clone https://github.com/santiagoriverti/analisis_precios_minoristas_UADE.git /content/analisis_precios_minoristas_UADE
+!pip install -r /content/analisis_precios_minoristas_UADE/requirements.txt
 ```
 
 ---
 
-## Datos requeridos
+## Datos necesarios
 
-### Archivos maestros
+### Archivos maestros — colocar en `data/masters/`
 
-Colocar en `data/masters/`:
-
-| Archivo | Descripción | Cómo obtenerlo |
-|---------|-------------|----------------|
-| `Maestro de Productos Interno.xlsx` | ~176K productos con EAN, marca, rubro, categoría, proveedor | Provisto por INECO |
-| `maestro_sucursales_completo.xlsx` | ~3.6K sucursales con coordenadas (lat/lng), provincia, región | Provisto por INECO |
-| `IPC.xlsx` | IPC INDEC mensual por división (desde 2017) | [INDEC](https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31) |
-| `ar.json` | GeoJSON de polígonos de provincias argentinas (opcional, para coropleta) | [datos.gob.ar](https://datos.gob.ar) |
+| Archivo | Descripción | Tamaño |
+|---------|-------------|--------|
+| `Maestro de Productos Interno.xlsx` | 176.702 productos con EAN, marca, rubro, categoría | ~21 MB |
+| `maestro_sucursales_completo.xlsx` | 3.611 sucursales con coordenadas GPS, provincia, región | ~480 KB |
+| `IPC.xlsx` | IPC INDEC mensual por división (desde 2017) | ~25 KB |
+| `ar.json` | GeoJSON de 24 provincias argentinas (simplemaps.com) | ~1 MB |
 
 ### Datos SEPA
 
-Fuente oficial: [datos.produccion.gob.ar/dataset/sepa-precios](https://datos.produccion.gob.ar/dataset/sepa-precios)
+**Fuente oficial**: [datos.produccion.gob.ar/dataset/sepa-precios](https://datos.produccion.gob.ar/dataset/sepa-precios)
 
-#### Para análisis mensual / mapa de sucursales:
+**Archivos históricos**:
+- 2018-2023: [Google Drive](https://drive.google.com/drive/folders/13GONeBs5lQCSUdBioHYk-8GhfDtIyliD)
+- 2024-2026: [Google Drive](https://drive.google.com/drive/folders/1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I)
 
-Colocar en `data/input/semestrales/` el ZIP de cada semestre:
+#### Para análisis de evolución semestral
+
+Colocar en `data/input/semestrales/` con nombre `AAAAS.zip` (A=primer semestre, B=segundo):
 
 ```
 data/input/semestrales/
-├── 2022A.zip
-├── 2022B.zip
+├── 2022A.zip    ← enero-junio 2022
+├── 2022B.zip    ← julio-diciembre 2022
 ├── 2023A.zip
 ├── 2023B.zip
 ├── 2024A.zip
 ├── 2024B.zip
 ├── 2025A.zip
 ├── 2025B.zip
-└── 2026A.zip
+└── 2026A.zip    ← enero-junio 2026
 ```
 
-El nombre del archivo determina el código de semestre que usa el sistema (`AAAA` + `A`/`B`).
+#### Para análisis mensual / mapa de sucursales
 
-#### Para análisis de un día específico:
-
-Colocar en `data/input/diarios/`:
+Colocar en `data/input/semestrales/` o un directorio aparte los archivos mensuales:
 
 ```
-data/input/diarios/
-└── 2026-04-26.zip
+MMAAAA_pais_parte1COMPLETO.csv.gz
+MMAAAA_pais_parte2COMPLETO.csv.gz
 ```
+
+Ejemplo: `042026_pais_parte1COMPLETO.csv.gz` = abril 2026.
 
 ---
 
-## Uso — Notebooks (recomendado)
+## Flujo de trabajo
 
-Abrir Jupyter:
+### Notebooks (recomendado para análisis)
 
 ```bash
 jupyter lab notebooks/
 ```
 
-| # | Notebook | ¿Qué hace? | Input principal |
-|---|----------|-----------|-----------------|
-| 01 | `01_universo_productos.ipynb` | Identifica todos los EANs únicos del SEPA, cobertura por cadena y provincia | ZIP diario |
-| 02 | `02_canasta_diaria.ipynb` | Calcula la canasta ICM-UADE por provincia y genera la coropleta | ZIP diario + maestros |
-| 03 | `03_mapa_sucursales.ipynb` | Mapa Folium interactivo + rankings de cadenas nacional y AMBA | ZIP semestral + maestros |
-| 04 | `04_evolucion_semestral.ipynb` | Serie temporal mensual de un semestre (provincia / región / nación) | ZIP semestral + maestros |
-| 05 | `05_consolidacion_ipc.ipynb` | Consolida todos los semestres, construye índice y compara contra IPC INDEC | Outputs del notebook 04 + IPC.xlsx |
+| Notebook | ¿Qué hace? | Input |
+|----------|-----------|-------|
+| `01_universo_productos.ipynb` | Identifica todos los EANs únicos del SEPA con cobertura por cadena y provincia | ZIP diario |
+| `02_canasta_diaria.ipynb` | Canasta ICM-UADE por provincia + coropleta PNG | ZIP diario + maestros |
+| `03_mapa_sucursales.ipynb` | Mapa Folium interactivo + rankings de cadenas + barrios CABA | ZIP semestral + maestros |
+| `04_evolucion_semestral.ipynb` | Serie temporal mensual de un semestre por provincia/región/nación | ZIP semestral + maestros |
+| `05_consolidacion_ipc.ipynb` | Consolida todos los semestres + índice + comparativa IPC + gráficos | Outputs notebook 04 + IPC.xlsx |
 
-### Uso en Google Colab
-
-Los notebooks detectan automáticamente si están corriendo en Colab. Solo asegurarse de que el proyecto esté disponible en `/content/analisis_precios_minoristas_UADE`:
-
-```python
-# En la primera celda de Colab:
-!git clone https://github.com/santiagoriverti/analisis_precios_minoristas_UADE.git /content/analisis_precios_minoristas_UADE
-!pip install -r /content/analisis_precios_minoristas_UADE/requirements.txt
-
-# Luego subir los archivos maestros y ZIPs a /content/analisis_precios_minoristas_UADE/data/
-```
-
----
-
-## Uso — Scripts CLI
-
-### Procesar un semestre
+### Scripts CLI
 
 ```bash
-# Procesar el semestre 2026A (busca data/input/semestrales/2026A.zip)
+# Procesar un semestre (busca data/input/semestrales/2026A.zip)
 python scripts/procesar_semestral.py 2026A
 
-# Procesar todos los ZIPs disponibles
+# Procesar todos los ZIPs disponibles de una vez
 python scripts/procesar_semestral.py --todos
 
-# Ver estado actual
-python scripts/procesar_semestral.py
-```
-
-### Consolidar series y comparar con IPC
-
-```bash
-# Consolida todos los semestres procesados y genera gráficos
+# Consolidar y generar comparativa IPC + gráficos
 python scripts/consolidar_series.py
 
-# Desde un mes específico
-python scripts/consolidar_series.py --desde 2024-01
+# Agente de IA interactivo (requiere ANTHROPIC_API_KEY)
+python scripts/agente_interactivo.py
 ```
 
-### Agente de IA interactivo
+### Agente de IA
 
 ```bash
-# Modo chat interactivo
+# Windows PowerShell
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+
+# Linux / Mac / Colab
+export ANTHROPIC_API_KEY="sk-ant-..."
+
 python scripts/agente_interactivo.py
-
-# Modo no interactivo (una sola tarea)
-python scripts/agente_interactivo.py --tarea "Procesá el semestre 2026A y generá el mapa"
 ```
 
----
-
-## Agente de IA multi-agente
-
-El sistema incluye un **orquestador multi-agente** (`src/sepa/agents/orchestrator.py`) basado en la API de Anthropic:
-
-### Características
-
-- **Modelo**: Claude claude-sonnet-4-6 con **prompt caching** (reduce costos en sesiones largas)
-- **Tool use**: El agente puede ejecutar 7 herramientas especializadas
-- **Memoria persistente**: SQLite en `memory/state.db` — recuerda qué períodos ya fueron procesados
-- **Lenguaje natural**: Responde en español con contexto metodológico del ICM-UADE
-
-### Herramientas disponibles
-
-| Tool | Descripción |
-|------|-------------|
-| `run_daily_analysis` | Procesa un ZIP diario del SEPA |
-| `run_semester_analysis` | Procesa un semestre completo |
-| `run_consolidation` | Consolida todos los semestres + IPC |
-| `generate_branch_map` | Genera mapa Folium interactivo |
-| `generate_chain_rankings` | Rankings nacional y AMBA con PNGs |
-| `list_available_data` | Lista datos disponibles y resultados |
-| `get_analysis_summary` | Estadísticas del último análisis |
-
-### Ejemplo de uso
-
-```python
-from sepa.agents.orchestrator import SEPAOrchestrator
-
-agent = SEPAOrchestrator()
-
-# Ejecutar análisis completo
-result = agent.chat("Procesá el semestre 2026A, generá el mapa y el ranking de cadenas")
-print(result)
-
-# Consultar estado
-result = agent.chat("¿Qué semestres ya están procesados?")
-print(result)
-```
-
-### Uso desde Python en un notebook
-
-```python
-import sys
-sys.path.insert(0, 'src')
-
-from sepa.agents.orchestrator import SEPAOrchestrator
-
-agent = SEPAOrchestrator()
-print(agent.chat("¿Cuál fue la cadena más barata en AMBA en abril 2026?"))
-```
-
----
-
-## Uso programático del paquete
-
-```python
-import sys
-sys.path.insert(0, 'src')
-
-# Cargar datos
-from sepa.pipeline.loader import iter_semester_csvgz, load_master_branches
-from sepa.pipeline.cleaner import clean_prices
-from sepa.pipeline.enricher import enrich_with_branches, filter_excluded_chains
-from sepa.pipeline.aggregator import compute_monthly_avg, build_branch_basket, aggregate_national_weighted
-
-# Configuración
-from sepa.config.canasta import CANASTA_EANS
-
-# Procesar semestre
-frames = []
-for chunk in iter_semester_csvgz('data/input/semestrales/2026A.zip', ean_filter=CANASTA_EANS):
-    chunk = filter_excluded_chains(chunk)
-    chunk = clean_prices(chunk, auto_scale=True)
-    frames.append(chunk)
-
-import pandas as pd
-df = pd.concat(frames)
-
-# Calcular canasta por sucursal
-df_monthly = compute_monthly_avg(df)
-df_branch  = build_branch_basket(df_monthly)
-
-# Agregar a nivel nacional
-from sepa.pipeline.aggregator import aggregate_by_province
-mb = load_master_branches()
-df_enriched = enrich_with_branches(df, mb)
-df_prov = aggregate_by_province(df_branch, df_enriched)
-df_nat  = aggregate_national_weighted(df_prov)
-print(df_nat)
-
-# Generar mapa
-from sepa.viz.maps import make_branch_map
-make_branch_map(df_branch, df_enriched, 'products/mapa_2026-04.html', mes='2026-04')
-
-# Rankings
-from sepa.analysis.chains import national_ranking, amba_ranking
-rank_nac  = national_ranking(df_branch, df_enriched, mes='2026-04')
-rank_amba = amba_ranking(df_branch, df_enriched, mes='2026-04')
-
-# Comparativa IPC
-from sepa.analysis.timeseries import load_ipc, build_comparative
-df_ipc  = load_ipc('data/masters/IPC.xlsx')
-df_comp = build_comparative(df_nat, df_ipc, base_month='2023-05')
-
-# Gráficos
-from sepa.viz.charts import plot_index_series, plot_chain_ranking
-plot_index_series(df_comp, 'products/indices.png')
-plot_chain_ranking(rank_nac, 'products/ranking_nacional.png')
-```
-
----
-
-## Arquitectura del código
-
-```
-analisis_precios_minoristas_UADE/
-│
-├── src/sepa/                        ← Paquete Python principal
-│   ├── config/
-│   │   ├── settings.py              ← Rutas, parámetros globales, pesos poblacionales
-│   │   ├── canasta.py               ← 30 EANs con cantidades mensuales y categorías
-│   │   ├── geo.py                   ← Mapeos ISO → provincia → región
-│   │   └── cadenas.py               ← IDs de cadenas SEPA → nombre comercial
-│   │
-│   ├── pipeline/
-│   │   ├── loader.py                ← Descompresión de ZIPs, lectura de CSVs, maestros
-│   │   ├── cleaner.py               ← Detección automática de escala de precios, filtros
-│   │   ├── enricher.py              ← Join con maestros de productos y sucursales
-│   │   └── aggregator.py            ← Canasta por sucursal, imputación, ponderación
-│   │
-│   ├── analysis/
-│   │   ├── basket.py                ← Cobertura, composición, dispersión de la canasta
-│   │   ├── chains.py                ← Rankings nacional y AMBA, series por cadena
-│   │   └── timeseries.py            ← Consolidación multi-semestre, índices, IPC
-│   │
-│   ├── viz/
-│   │   ├── maps.py                  ← Mapa Folium por sucursal + coropleta provincial
-│   │   ├── charts.py                ← Rankings, series temporales, variaciones
-│   │   └── exports.py               ← Excel multi-hoja, Parquet, consolidado
-│   │
-│   └── agents/
-│       ├── memory.py                ← SQLite: historial de runs, artefactos, KV store
-│       ├── tools.py                 ← Definición de tools para la API de Anthropic
-│       └── orchestrator.py          ← Orquestador multi-agente (Claude claude-sonnet-4-6)
-│
-├── notebooks/
-│   ├── 01_universo_productos.ipynb  ← Explorar todos los productos del SEPA
-│   ├── 02_canasta_diaria.ipynb      ← Canasta por provincia (datos de un día)
-│   ├── 03_mapa_sucursales.ipynb     ← Mapa interactivo + rankings
-│   ├── 04_evolucion_semestral.ipynb ← Serie temporal de un semestre
-│   └── 05_consolidacion_ipc.ipynb   ← Consolidación multi-año + IPC INDEC
-│
-├── scripts/
-│   ├── procesar_semestral.py        ← CLI: procesar uno o todos los semestres
-│   ├── consolidar_series.py         ← CLI: consolidar + IPC + gráficos
-│   └── agente_interactivo.py        ← CLI: chat con el agente de IA
-│
-├── data/
-│   ├── input/diarios/               ← ZIPs diarios del SEPA (gitignoreados)
-│   ├── input/semestrales/           ← ZIPs semestrales del SEPA (gitignoreados)
-│   ├── masters/                     ← Archivos de referencia (gitignoreados)
-│   ├── cache/                       ← Parquets intermedios (gitignoreados)
-│   └── output/                      ← Excels generados (gitignoreados)
-│
-├── products/                        ← Outputs publicables (HTML, PNG)
-├── memory/                          ← state.db — memoria persistente del agente
-│
-├── CLAUDE.md                        ← Instrucciones para Claude Code (AI assistant)
-├── README.md
-├── requirements.txt
-└── pyproject.toml
-```
+El agente responde en lenguaje natural en español argentino:
+- *"Procesá el semestre 2026A y generá el mapa"*
+- *"¿Cuánto vale la canasta en abril 2026? ¿Qué cadena fue la más barata?"*
+- *"Generá el ranking de barrios de CABA"*
+- *"Consolidá todos los semestres y comparalos con el IPC"*
 
 ---
 
 ## Canasta de 30 productos (ICM-UADE)
 
-Calibrada para hogar de 4 personas. Cantidades mensuales fijas:
+Calibrada para hogar tipo de 4 personas — **105 unidades mensuales en total**.
 
-| Categoría | Productos | EAN ejemplo |
-|-----------|-----------|-------------|
-| **Lácteos (5)** | Leche entera 1L ×20, Yogur 190g ×8, Queso Casancrem 290g ×2, Manteca 100g ×2, Cindor 1L ×4 | 7790742363008 |
-| **Almacén (8)** | Aceite girasol 1.5L ×2, Arroz 500g ×2, Fideos 500g ×4, Harina leudante 1kg ×2, Yerba 500g ×2, Café 250g ×1, Chocolinas 250g ×4, Sal fina 500g ×1 | 7794000012000 |
-| **Bebidas (5)** | Coca Cola lata 354ml ×8, Coca Sin Azúcar 2.25L ×4, Agua Levite 500ml ×8, Cerveza lata 473ml ×6, Vino Malbec 750ml ×2 | 7790895004837 |
-| **Limpieza (3)** | Lavandina 1L ×2, Detergente 300ml ×2, Limpiador Poett 900ml ×2 | 7790230512009 |
-| **Higiene (7)** | Shampoo 400ml ×1, Acondicionador 340ml ×1, Jabón tocador 90g ×4, Antitranspirante ×2, Hilo dental ×1, Toallas femeninas x16 ×2, Papel higiénico ×2 | 7791293020063 |
-| **Snacks (2)** | Rocklets 40g ×2, Saladix 100g ×2 | 7790580413405 |
+| Categoría | Productos | Ejemplo | EAN |
+|-----------|-----------|---------|-----|
+| **Lácteos** (5) | Leche ×20, Yogur ×8, Queso ×2, Manteca ×2, Cindor ×4 | Serenísima 1L | 7790742363008 |
+| **Almacén** (8) | Aceite ×2, Arroz ×2, Fideos ×4, Harina ×2, Yerba ×2, Café ×1, Chocolinas ×4, Sal ×1 | Fideos Favorita 500g | 7790070320285 |
+| **Bebidas** (5) | Coca Cola lata ×8, Coca Sin Azúcar ×4, Agua Levite ×8, Cerveza ×6, Vino ×2 | | 7790895000232 |
+| **Limpieza** (3) | Lavandina ×2, Detergente ×2, Limpiador Poett ×2 | Ayudín 1L | 7790132098459 |
+| **Higiene** (7) | Shampoo ×1, Acondicionador ×1, Jabón ×4, Desodorante ×2, Hilo dental ×1, Toallas ×2, Papel higiénico ×2 | | — |
+| **Snacks** (2) | Rocklets ×2, Saladix ×2 | | 7790580327415 |
 
-Los EANs exactos están en [`src/sepa/config/canasta.py`](src/sepa/config/canasta.py).
+Lista completa con EANs verificados en [`src/sepa/config/canasta.py`](src/sepa/config/canasta.py).
 
 ---
 
@@ -361,101 +159,146 @@ Los EANs exactos están en [`src/sepa/config/canasta.py`](src/sepa/config/canast
 
 ### Período válido
 
-La serie temporal del ICM-UADE es confiable **desde mayo de 2023**. Antes de ese mes, la cobertura del SEPA era heterogénea y muchos productos de la canasta aparecían en una sola cadena o no reportaban datos.
-
-- Los meses de mayo y junio de 2023 tienen variaciones marcadas como `NaN` (panel aún en consolidación).
-- El primer mes con variación comparable es **julio de 2023**.
-
-### Ponderación nacional
-
-La canasta nacional ponderada usa **pesos poblacionales del Censo 2022** (45.9 millones de personas, 24 provincias). La fórmula es:
-
-```
-Canasta_Nacional(mes) = Σ [ Canasta_Provincia(prov, mes) × Peso(prov) ]
-```
-
-Donde `Peso(prov) = Población(prov) / Población_Total`.
-
-### Imputación de productos faltantes
-
-Si una sucursal no reporta precio para un producto de la canasta, se imputa el **promedio nacional de ese producto en ese mes**. Solo se incluyen sucursales con al menos **20 de 30 productos propios** (sin imputar).
+La serie histórica del ICM-UADE es confiable **desde mayo de 2023**. Antes, la cobertura SEPA era insuficiente.
+Las variaciones de mayo y junio 2023 se anulan (panel en consolidación). El primer mes comparable es **julio 2023**.
 
 ### Detección automática de escala de precios
 
-Algunas versiones del SEPA reportan precios con decimales implícitos (e.g., `17890` en lugar de `$178.90`). El sistema detecta automáticamente el factor correcto examinando las medianas de 3 productos de referencia (Sal, Fideos, Lavandina):
+El SEPA varía el factor de escala entre períodos. Se detecta automáticamente con la mediana de Sal + Fideos + Lavandina:
 
-| Mediana observada | Factor | Interpretación |
-|------------------|--------|---------------|
-| $30 – $10.000 | ÷1 | Precios ya en pesos |
-| $3.000 – $1.000.000 | ÷100 | Centavos → pesos |
-| > $1.000.000 | ÷10.000 | Decimales implícitos |
+| Mediana observada | Factor divisor | Ejemplo |
+|-------------------|---------------|---------|
+| $30 – $5.000 | ÷1 | Precios ya en pesos |
+| $3.000 – $500.000 | ÷100 | Centavos → pesos |
+| > $500.000 | ÷10.000 | Decimales implícitos |
 
-### Cadenas incluidas
+### Imputación de productos faltantes
 
-| ID Comercio | Cadena(s) |
-|-------------|----------|
-| 2 | La Anónima |
+Si una sucursal no reporta un producto → se imputa el promedio nacional de ese producto y mes.
+Solo se incluyen sucursales con **al menos 20 de 30 productos propios** (sin imputar).
+
+### Ponderación nacional
+
+Usa **pesos poblacionales del Censo INDEC 2022** (45.892.285 personas, 24 provincias).
+
+### Filtros de calidad
+
+- Cadenas excluidas: FULL/YPF (19), Mercado Libre (2013), Easy (3001), ID 4
+- Sucursales excluidas: tipo "Web" (sin ubicación física)
+- CABA mal clasificadas: coordenadas fuera del bounding box lat[-34.71,-34.53] lon[-58.53,-58.34]
+
+### Barrios CABA
+
+Los 48 barrios se clasifican por **coordenadas GPS** (bounding boxes), no por nombre de sucursal.
+Esto evita falsos positivos como sucursales en "Av. Belgrano" que físicamente están en Boedo.
+
+---
+
+## Cadenas incluidas (14 representativas)
+
+| ID | Cadena(s) |
+|----|---------|
 | 9 | Vea / Disco / Jumbo (Cencosud) |
 | 10 | Carrefour / Carrefour Market / Carrefour Express |
-| 11 | ChangoMas / Mi ChangoMas / Hiper ChangoMas |
+| 11 | ChangoMas / Hiper ChangoMas / Mi ChangoMas (ex Walmart) |
 | 12 | Coto |
 | 13 | Cooperativa Obrera |
 | 15 | DIA |
-| 16 | Hipermercado Libertad |
+| 16 | Hipermercado Libertad / Mini Libertad |
+| 2 | La Anónima |
 | 20 | LAR |
 | 21 | Toledo |
 | 47 | Pasamonte |
 
-**Excluidas**: Mercado Libre (4), FULL (19), Easy (2013), Farmacity (3001), Simplicity (3002).
-
 ---
 
-## Hallazgos principales (mayo 2023 – abril 2026)
+## Resultados — Abril 2026 (último período procesado)
 
 | Métrica | Valor |
 |---------|-------|
-| **Acumulado ICM-UADE** | **+946%** |
-| **IPC INDEC General acumulado** | +586% |
-| **Brecha** | +360 puntos de índice |
-| Sucursales analizadas (abr. 2026) | 2.371 |
-| Cadenas relevadas | 16 |
-| Provincia más barata (abr. 2026) | **Córdoba** (−4.0% vs. promedio) |
-| Provincia más cara (abr. 2026) | **Santa Cruz** (+8.4% vs. promedio) |
-| Dispersión precios AMBA | 5.4% |
-| Dispersión precios nacional | 12.1% |
+| **ICM-UADE nacional ponderado** | **$322.566** |
+| Variación mensual | +3,01% |
+| Sucursales analizadas | 2.369 |
+| Cadenas | 14 |
+| Provincias | 24 |
+| Localidades | 477 |
+| Cadena más barata (nacional) | Hipermercado Libertad ($298.914) |
+| Cadena más cara (nacional) | La Anónima ($335.213) |
+| Dispersión nacional | 12,1% |
+| Dispersión AMBA | 5,4% |
+| Barrio más barato CABA | Villa Soldati ($319.641, −1,47%) |
+| Barrio más caro CABA | San Nicolás ($327.321, +0,90%) |
 
-*La canasta de bienes de góndola (30 productos de consumo masivo) aumentó ~1.6× más rápido que el IPC general, que incluye servicios regulados (educación, transporte, vivienda).*
+---
+
+## Arquitectura del código
+
+```
+src/sepa/
+├── config/
+│   ├── settings.py     — rutas, parámetros, pesos poblacionales Censo 2022
+│   ├── canasta.py      — 30 EANs verificados con cantidades mensuales
+│   ├── geo.py          — ISO→provincia, normalización, 48 barrios CABA (bounding boxes)
+│   └── cadenas.py      — IDs SEPA → nombres comerciales, cadenas excluidas
+├── pipeline/
+│   ├── loader.py       — ZIPs (diario/semestral), CSV.GZ, auto-detección separador
+│   ├── cleaner.py      — detección factor de escala, filtros de precio, dedup
+│   ├── enricher.py     — join con maestros, filtros Web/CABA, barrios CABA
+│   └── aggregator.py   — canasta por sucursal (vectorizado), provincia, región, nación
+├── analysis/
+│   ├── basket.py       — ranking provincial, barrios CABA, dispersión
+│   ├── chains.py       — rankings nacional y AMBA
+│   └── timeseries.py   — consolidación multi-semestre, índices, comparativa IPC
+├── viz/
+│   ├── maps.py         — mapa Folium por sucursal, coropleta por provincia
+│   ├── charts.py       — rankings, series temporales, variaciones mensuales
+│   └── exports.py      — Excel multi-hoja, Parquet, consolidado
+└── agents/
+    ├── memory.py       — SQLite: historial de runs, artefactos, KV store
+    ├── tools.py        — definición de tools para la API de Anthropic
+    └── orchestrator.py — agente multi-herramienta (Claude claude-sonnet-4-6 + prompt caching)
+
+.claude/
+├── MEMORY.md           — memoria del proyecto (cargada en cada sesión)
+├── settings.json       — permisos y registro de skills
+└── skills/
+    ├── si-remember/    — /si:remember — guardar decisiones entre sesiones
+    ├── si-review/      — /si:review   — auditar memoria
+    ├── si-promote/     — /si:promote  — promover patrones a reglas permanentes
+    ├── si-extract/     — /si:extract  — extraer skills reutilizables
+    ├── barrios-caba/   — análisis de barrios CABA por coordenadas
+    ├── informe-mensual/ — generador del informe de prensa ICM-UADE
+    ├── data-quality-auditor/    — validación de datos SEPA
+    ├── statistical-analyst/     — índices, dispersión, tests estadísticos
+    ├── senior-data-scientist/   — análisis estadístico avanzado
+    └── senior-data-engineer/    — optimización de pipeline y ETL
+```
 
 ---
 
 ## Dependencias
 
 ```
-pandas>=2.0.0        # DataFrames
-numpy>=1.24.0        # Operaciones numéricas
-openpyxl>=3.1.0      # Lectura/escritura Excel
-pyarrow>=12.0.0      # Parquet (cache eficiente)
-matplotlib>=3.7.0    # Gráficos
-folium>=0.14.0       # Mapas interactivos Leaflet
-branca>=0.6.0        # Colormaps para Folium
-anthropic>=0.40.0    # API de Claude (agente multi-herramienta)
-jupyter>=1.0.0       # Notebooks (opcional)
+pandas>=2.0.0       numpy>=1.24.0
+openpyxl>=3.1.0     pyarrow>=12.0.0
+matplotlib>=3.7.0   folium>=0.14.0    branca>=0.6.0
+anthropic>=0.40.0   jupyter>=1.0.0
 ```
-
----
-
-## Contribución
-
-Este es un proyecto institucional de INECO/UADE. Para reportar problemas o sugerir mejoras, abrir un issue en este repositorio.
 
 ---
 
 ## Fuentes de datos
 
-- **SEPA**: [datos.produccion.gob.ar/dataset/sepa-precios](https://datos.produccion.gob.ar/dataset/sepa-precios)
-- **IPC INDEC**: [indec.gob.ar](https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31)
-- **Censo 2022**: [indec.gob.ar](https://www.indec.gob.ar/indec/web/Nivel4-Tema-2-41-165)
+| Fuente | URL |
+|--------|-----|
+| SEPA (portal oficial) | [datos.produccion.gob.ar/dataset/sepa-precios](https://datos.produccion.gob.ar/dataset/sepa-precios) |
+| SEPA histórico 2018-2023 | [Google Drive](https://drive.google.com/drive/folders/13GONeBs5lQCSUdBioHYk-8GhfDtIyliD) |
+| SEPA 2024-2026 | [Google Drive](https://drive.google.com/drive/folders/1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I) |
+| IPC INDEC | [indec.gob.ar](https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31) |
+| Censo 2022 | [indec.gob.ar](https://www.indec.gob.ar/indec/web/Nivel4-Tema-2-41-165) |
+| GeoJSON provincias | [simplemaps.com](https://simplemaps.com/gis/country/ar) |
+| Marco normativo SEPA | Resolución 12/2016, ex Secretaría de Comercio |
 
 ---
 
-*Desarrollado por INECO — Instituto de Economía, Universidad Argentina de la Empresa*
+*Desarrollado por INECO — Instituto de Economía, Universidad Argentina de la Empresa (UADE)*
