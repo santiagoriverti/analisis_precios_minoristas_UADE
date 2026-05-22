@@ -1,5 +1,31 @@
 # ICM-UADE — Análisis de Precios Minoristas SEPA
 
+## Skills instalados en este proyecto
+
+### Memoria (Self-Improving Agent)
+
+| Comando | Skill | Cuándo usar |
+|---------|-------|-------------|
+| `/si:remember` | `si-remember` | Guardar decisiones, convenciones, gotchas del SEPA entre sesiones |
+| `/si:review` | `si-review` | Auditar y limpiar la memoria del proyecto |
+| `/si:promote` | `si-promote` | Promover patrones repetidos a reglas permanentes en CLAUDE.md |
+| `/si:extract` | `si-extract` | Extraer un patrón como skill reutilizable en otros proyectos |
+
+La memoria del proyecto vive en `.claude/MEMORY.md`. Se carga automáticamente al iniciar cada sesión.
+
+### Análisis de datos
+
+| Skill | Cuándo se activa | Fuente |
+|-------|-----------------|--------|
+| `data-quality-auditor` | Al cargar datos SEPA nuevos o antes de publicar resultados | alirezarezvani/claude-skills |
+| `statistical-analyst` | Al calcular índices, variaciones, comparativas IPC | alirezarezvani/claude-skills |
+| `senior-data-scientist` | Al diseñar análisis estadísticos, experimentos, modelos | alirezarezvani/claude-skills |
+| `senior-data-engineer` | Al optimizar el pipeline, diseñar esquemas, mejorar ETL | alirezarezvani/claude-skills |
+
+Los skills están en `.claude/skills/`. Sus SKILL.md se cargan automáticamente.
+
+---
+
 ## ¿Qué es este proyecto?
 
 Sistema de análisis de precios minoristas argentinos usando datos del **SEPA** (Sistema Electrónico de Publicidad de Precios Argentinos). Desarrollado por **INECO — Universidad Argentina de la Empresa**.

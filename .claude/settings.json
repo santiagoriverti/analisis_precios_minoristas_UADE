@@ -12,7 +12,18 @@
       "Write(data/output/**)",
       "Write(data/cache/**)",
       "Write(products/**)",
-      "Write(memory/**)"
+      "Write(memory/**)",
+      "Write(.claude/memory/**)"
     ]
-  }
+  },
+  "skills": [
+    ".claude/skills/si-remember",
+    ".claude/skills/si-review",
+    ".claude/skills/si-promote",
+    ".claude/skills/si-extract",
+    ".claude/skills/data-quality-auditor",
+    ".claude/skills/statistical-analyst",
+    ".claude/skills/senior-data-scientist",
+    ".claude/skills/senior-data-engineer"
+  ]
 }
