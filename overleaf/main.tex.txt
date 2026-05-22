@@ -1,0 +1,782 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plantilla: Informe de prensa - Instituto de Economía - UADE
+% Versión: mejorada (eestilo newsletter moderno, colores, portada y cajas)
+%
+% Instrucciones:
+% - Cambiar la fecha usando \Fecha{...} más abajo, o dejar vacío para usar \today.
+% - Si luego querés pasar a XeLaTeX/LuaLaTeX, avisame y te doy la variante con fontspec.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[10pt,a4paper]{article}
+
+% Al principio del preámbulo
+\usepackage[a4paper]{geometry}  % pero no definimos aún
+%% -------------- Codificación, idioma y fuentes (pdfLaTeX)
+\usepackage{caption} % para usar \captionof{table} dentro de minipage
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}        % idioma español
+\usepackage{lmodern}               % fuentes T1 robustas
+\usepackage{microtype}             % mejoras tipográficas sutiles
+\usepackage{charter}               % fuente tipo Charter para el cuerpo (opcional)
+\frenchspacing
+\usepackage{csquotes} % mejora las comillas y compatibilidad con babel
+
+
+\usepackage{tabularx,booktabs}
+\usepackage{makecell}
+
+% --- Citado con natbib (estilo apalike)
+\usepackage{natbib}
+\bibliographystyle{apalike}
+
+%% -------------- Imágenes
+\usepackage{graphicx}
+\graphicspath{{figuras/}} % para no repetir "figuras/" en cada includegraphics
+
+%% -------------- Colores y enlaces
+\usepackage{xcolor}
+\definecolor{INECOblue}{HTML}{0055A4}
+\definecolor{INECOgray}{HTML}{4E5D6C}
+\definecolor{INECOlight}{HTML}{E6EEF7}
+
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=INECOblue,
+  urlcolor=INECOblue,
+  citecolor=INECOblue
+}
+\urlstyle{same}
+
+%% -------------- Diseño de página (estilo newsletter del template original)
+% (no usamos geometry para mantener estilo similar al template original)
+\setlength\topmargin{-48pt}
+\setlength\headheight{0pt}         % sin encabezado
+\setlength\headsep{0pt}
+\setlength\marginparwidth{-20pt}
+\setlength\textwidth{7.0in}
+\setlength\textheight{9.5in}
+\setlength\oddsidemargin{-30pt}
+\setlength\evensidemargin{-30pt}
+
+%% -------------- Paquetes útiles
+\usepackage{amssymb,amsmath}       % símbolos matemáticos
+\usepackage{multicol}              % columnas múltiples
+\usepackage{marvosym}              % iconos (\Letter, \Mundus, \Telefon, ...)
+\usepackage{fancyhdr}              % encabezado/pie
+\usepackage{titlesec}              % control de títulos
+\usepackage[most]{tcolorbox}       % cajas estilizadas
+\usepackage{enumitem}              % listas compactas
+\usepackage{parskip}
+\usepackage{setspace}
+\setstretch{1.7}
+\usepackage{indentfirst}
+\setlength{\parindent}{1.5em}
+\usepackage{siunitx}               % números y porcentajes prolijos (opcional)
+\sisetup{
+  output-decimal-marker = {,},   % la coma para decimales
+  group-separator       = {.},   % el punto para miles
+  group-minimum-digits  = 4,     % activa separación de miles a partir de 4 dígitos
+  group-digits          = integer
+}
+
+\usepackage{caption}
+
+\captionsetup{
+  font=small,            % achica el texto del caption (incluye "Figura 1")
+  labelfont=small,       % achica también la parte de "Figura 1"
+  width=1\linewidth    % fuerza a que el caption se divida en varias líneas width=0.7
+}
+
+%% -------------- Fecha personalizable y metadatos
+% Uso: \Fecha{23 de septiembre de 2025}
+\newcommand{\Fecha}[1]{\if\relax\detokenize{#1}\relax \def\FechaText{\today} \else \def\FechaText{#1} \fi}
+% Por defecto usa \today (en español)
+\Fecha{Mayo 2026} % <-- poner aquí la fecha si querés fijarla manualmente, ej: \Fecha{23 de septiembre de 2025}
+
+\newcommand{\Numero}[1]{\def\NumeroText{#1}}
+\Numero{1} % número de edición
+
+\newcommand{\JournalNameText}{Instituto de Economía - UADE}
+\newcommand{\JournalSubtitleText}{Informe de prensa}
+
+%% -------------- NUEVO: Título del informe y autor/investigador
+% Definiciones con texto por defecto vacío para evitar errores si se omiten.
+\def\TituloInformeText{}
+\def\AutorInformeText{}
+\newcommand{\TituloInforme}[1]{\def\TituloInformeText{#1}}
+\newcommand{\AutorInforme}[1]{\def\AutorInformeText{#1}}
+
+% >>> Ejemplo (editá estos valores) <<<
+\TituloInforme{%
+{\setstretch{1} % interlineado normal SOLO en el título
+\noindent       % evita sangría
+\huge Índice de Consumo Masivo UADE \\[0.2cm]
+{\LARGE\color{INECOgray} El ICM-UADE en abril 2026 asciende \$322.566 a nivel nacional y registra una variación mensual de 3,01\%.}
+\par}
+}
+
+%% -------------- Encabezado / Pie (sin encabezado; pie refinado)
+\pagestyle{fancy}
+\fancyhf{}                          % limpiar cabeceras/pies
+\renewcommand{\headrulewidth}{0pt}  % sin línea superior
+
+% Pie con línea tenue, email/enlace a la izquierda y número de página a la derecha
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{INECOlight}\leaders\hrule height \footrulewidth\hfill}}
+
+\fancyfoot[L]{%
+  \sffamily\footnotesize\color{INECOgray}%
+  \Letter\ \texttt{investigacion@uade.edu.ar}\\[2pt]
+  \Mundus\ \href{https://www.uade.edu.ar/sites/investigacion/instituto-de-economia-ineco/}{INECO}
+}
+\fancyfoot[R]{\sffamily\footnotesize\color{INECOgray} Página \thepage}
+
+%% -------------- Macros y estilo (reglas, separadores, títulos)
+\newcommand{\HorRule}[1]{\noindent\rule{\linewidth}{#1}}
+\newcommand{\SepRule}{\noindent\begin{center}\rule{250pt}{1pt}\end{center}}
+
+% Título principal (no se usa directamente, lo reemplaza la portada)
+\newcommand{\JournalName}[1]{%
+    \begin{center}
+      {\sffamily\Huge\bfseries #1}
+    \end{center}
+    \par \normalsize \normalfont}
+
+% Encabezado de edición (opcional, ya no se usa con \CoverHeader)
+\newcommand{\JournalIssue}[1]{%
+    \begin{flushright}\small \FechaText \end{flushright}\par\normalsize\noindent}
+
+% Estilo de secciones
+\titleformat{\section}
+  {\sffamily\Large\bfseries\color{INECOblue}}
+  {}{0pt}{}
+\titlespacing*{\section}{0pt}{6pt}{4pt}
+
+% Noticia / item (usado como estilo de subtítulo dentro de cajas)
+\newcommand{\NewsItem}[1]{%
+    \sffamily\large #1 \par\normalsize \normalfont \vspace{4pt}}
+\newcommand{\NewsAuthor}[1]{%
+    \hfill \textsc{#1} \vspace{4pt} \par \normalfont}
+
+% Caja estándar para bloques destacados (como Resumen ejecutivo)
+\tcbset{
+  boxrule=0pt, frame hidden,
+  colback=INECOlight,
+  enhanced, sharp corners,
+  borderline west={3pt}{0pt}{INECOblue},
+  left=8pt, right=8pt, top=8pt, bottom=8pt
+}
+
+% Portada con logo grande arriba y encabezado fecha + subtítulo
+\newcommand{\CoverHeader}{%
+  % Empujar todo hacia arriba, eliminando margen superior
+  \vspace*{-2cm}%
+
+  % --- LOGO ---
+  \noindent
+  \begin{center}
+    \includegraphics[width=\linewidth,keepaspectratio]{logo_ineco.jpg}%
+  \end{center}
+
+  \vspace{0.1cm}
+
+  % --- Fecha grande a la derecha + subtítulo a la izquierda ---
+  \noindent
+  \begin{minipage}[t]{0.48\linewidth}
+    {\sffamily\bfseries\large\color{INECOgray} Informe de prensa}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\linewidth}
+    \raggedleft {\sffamily\bfseries\large\color{INECOgray} \FechaText}
+  \end{minipage}
+
+  % --- Título del informe y autor ---
+  \vspace{0.3cm}
+  {\centering
+    {\sffamily\bfseries\fontsize{22}{26}\selectfont \TituloInformeText\par}
+    \vspace{0.1cm}
+    {\sffamily\large \AutorInformeText\par}
+  }%
+}
+
+
+% Columnas con separación y regla tenue
+\setlength{\columnsep}{18pt}
+\setlength{\columnseprule}{0.2pt}
+\makeatletter
+\def\columnseprulecolor{\color{INECOlight}}
+\makeatother
+
+% Listas compactas
+\setlist[itemize]{left=0pt,label=•,itemsep=2pt,topsep=2pt}
+\setlist[enumerate]{left=0pt,itemsep=2pt,topsep=2pt}
+
+%% -------------- Inicio del documento
+\begin{document}
+
+% ---------------------------
+% PORTADA
+% ---------------------------
+\CoverHeader
+
+% ---------------------------
+% BARRAS SUPERIORES FINAS (detalle visual)
+% ---------------------------
+\noindent\HorRule{3pt} \\[-0.75\baselineskip]
+\HorRule{1pt}
+
+% ---------------------------
+% RESUMEN EJECUTIVO (en caja)
+% ---------------------------
+\vspace{0.1cm}
+\begin{center}
+\begin{minipage}[h]{0.85\linewidth} %0.85\linewidth
+\begin{tcolorbox}
+    {\normalsize
+    \NewsItem{\textbf{\Large Resumen ejecutivo}}
+    \noindent
+    \begin{itemize}
+        \item En \textbf{abril de 2026}, el ICM-UADE alcanzó un valor nacional de \textbf{\$322.566} mensuales. La variación mensual del ICM-UADE fue de \textbf{+3,01\%} y la interanual del \textbf{+25,7\%}.
+        \vspace{.10 cm}
+        \item \textbf{Córdoba} es la provincia más accesible, cuya canasta asciende a \$309.694 (-3,99\% respecto del promedio nacional) y \textbf{Santa Cruz}, la más cara (\$349.730, +8,42\% respecto del promedio nacional). La dispersión entre el extremo más barato (Córdoba) y el más caro (Santa Cruz) es del \textbf{12,9\%} o \$40.036.
+        \vspace{.10 cm}
+        \item Las provincias del \textbf{Norte Grande} (junto con Córdoba) se ubican sistemáticamente por debajo del promedio nacional. Las cinco provincias de la \textbf{Patagonia} se ubican todas por encima del promedio, con diferencias de hasta +8,42\%.
+        \vspace{.10 cm}
+        \item Dentro de CABA los barrios más caros son Recoleta (\$326.547), Puerto Madero (\$326.083) y Palermo (\$326.066); los mas accesibles son Villa Soldati (\$319.605), Villa Real (\$320.786) y Parque Avellaneda (\$321.590), siendo el promedio de CABA similar al nacional.
+        \vspace{.10 cm}
+        \item En la Costa Atlántica, Necochea (\$333.490) y Pinamar (\$329.077) encabezan el ranking de las más caras. La canasta promedio en la costa atlántica asciende a 328.555.
+        \vspace{.10 cm}
+        \item A nivel nacional las cadenas más caras son: La Anónima, Toledo, Jumbo y Disco; y a nivel AMBA: Disco, Toledo, Jumbo y Vea.
+        \vspace{.10 cm}
+        \item Entre marzo de 2024 y abril de 2026 el ICM-UADE acumuló +90,3\% de inflación frente a +107,5\% del IPC nivel general. El ICM-UADE y el IPC de alimentos del INDEC mantienen \textbf{trayectorias muy similares}, con apenas 3 puntos porcentuales de brecha acumulada.
+    \end{itemize}
+    }
+\end{tcolorbox}
+\end{minipage}
+\end{center}
+
+% ---------------------------
+% Separador fino
+% ---------------------------
+
+% CAMBIAMOS A MÁRGENES NORMALES
+%\newpage
+%\newgeometry{top=2cm,bottom=2cm,left=2cm,right=2cm}
+
+% ---------------------------
+% Contenido en 3 columnas
+% ---------------------------
+%\begin{multicols}{2}
+
+%\vspace{.25 cm}
+\clearpage
+
+\section*{Índice de Consumo Masivo UADE}
+
+El \textbf{Índice de Consumo Masivo UADE (ICM-UADE)} es un indicador elaborado por el Instituto de Economía de la UADE (INECO) que mide cuánto cuesta acceder a una canasta de productos homogéneos en los supermercados argentinos\footnote{La base total cuenta con más de 15 millones de registros diarios y 85.911 productos únicos en las 24 jurisdicciones de Argentina.}. Está integrado por una canasta fija de 30 productos representativos del consumo cotidiano —lácteos, almacén, bebidas, limpieza, higiene personal y snacks— relevados diariamente en 27 cadenas comerciales y 3.098 sucursales de todo el país a través del Sistema Electrónico de Publicidad de Precios Argentinos (SEPA) del Ministerio de Economía \citep{SEPA_precios}. 
+
+A diferencia del IPC del INDEC, que mide la inflación general considerando rubros como vivienda, transporte, salud o educación, el ICM-UADE se concentra exclusivamente en los \textbf{precios de góndola de productos homogéneos y representativos}. Esta especialización permite observar con mayor precisión cómo evolucionan los precios de los productos que los hogares argentinos compran semana a semana, y cuáles son las diferencias entre provincias y regiones.
+
+\subsection*{Evolución del índice nacional}
+
+La figura \ref{fig:grafico_indices_desde_mar24} exhibe la evolución del ICM-UADE y del IPC del INDEC (nivel general y alimentos y bebidas) entre marzo del 2024 y abril del 2026.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Evolución ICM-UADE vs IPC INDEC}
+        \label{fig:grafico_indices_desde_mar24}
+        \includegraphics[width=0.75\linewidth]{figuras/grafico_indices_desde_mar24.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios} e \cite{IPC_INDEC}}
+    \end{minipage}
+\end{figure}
+
+La figura \ref{fig:grafico_indices_desde_mar24} muestra una elevada \textbf{correlación entre ambos indicadores} a lo largo del período analizado, validando el ICM-UADE como medida representativa de la dinámica de precios de consumo masivo. Entre marzo de 2024 y abril de 2026, el ICM-UADE acumuló una inflación del 90,3\%, mientras que el IPC nivel general y el IPC de alimentos y bebidas registraron incrementos del 107,5\% y 93,4\% respectivamente. Las tres series exhiben una trayectoria similar, con una fase de fuerte aceleración hasta mediados de 2024 —en respuesta al shock devaluatorio de fines de 2023— y una posterior etapa de desinflación sostenida que se profundiza a partir del segundo semestre de 2024.
+
+La diferencia acumulada entre el ICM-UADE y el IPC nivel general (aproximadamente 17 puntos porcentuales) refleja que los servicios regulados, transporte y otros rubros incluidos en el IPC se ajustaron con mayor intensidad que los precios de góndola. En contraste, el ICM-UADE y el IPC de alimentos y bebidas mantienen una trayectoria prácticamente superpuesta, con una brecha final de apenas 3 puntos porcentuales, lo que confirma que el indicador captura adecuadamente la dinámica específica del consumo masivo en supermercados.
+
+La figura \ref{fig:grafico_variaciones_desde_mar24} muestra la \textbf{variación mensual} del ICM-UADE y del IPC nivel general entre marzo de 2024 y abril de 2026. Ambos indicadores exhiben una \textbf{trayectoria descendente}, en donde las variaciones mensuales pasaron del rango de 10--13\% a comienzos del período a valores en torno al 2--3\% mensual hacia 2025--2026, en línea con el proceso de desinflación argentino. Posteriormente, las tasas convergen hacia una zona de estabilidad relativa en torno al 2--3\% mensual. A partir de mediados de 2024 las variaciones del ICM-UADE y del IPC se mueven de manera prácticamente sincronizada, con diferencias mensuales inferiores a un punto porcentual en la mayoría de los meses.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Variación ICM-UADE vs IPC INDEC}
+        \label{fig:grafico_variaciones_desde_mar24}
+        \includegraphics[width=0.75\linewidth]{figuras/grafico_variaciones_desde_mar24.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios} e \cite{IPC_INDEC}}
+    \end{minipage}
+\end{figure}
+
+En \textbf{febrero de 2026}, el ICM-UADE registró +1,20\% mensual frente a +2,90\% del IPC; en \textbf{marzo de 2026}, el ICM-UADE marcó +1,75\% y el IPC +3,38\%; finalmente, en \textbf{abril de 2026}, el ICM-UADE muestra una variación de +3,01\%, mientras que el dato oficial del IPC para ese mes aún no fue publicado por el INDEC.
+
+Una ventaja adicional del ICM-UADE es su \textbf{disponibilidad temprana}: al construirse con datos diarios del SEPA, el valor mensual puede calcularse el último día del mes de referencia, anticipándose en aproximadamente \textbf{dos semanas} a la publicación oficial del IPC del INDEC. Asimismo, esta característica lo convierte en una herramienta útil para el seguimiento en tiempo real de la dinámica inflacionaria y para la toma de decisiones económicas con información más oportuna.
+
+\subsection*{Canasta de consumo por provincia}
+
+El cuadro \ref{tab:canasta_provincias} presenta el valor del ICM-UADE en las 24 jurisdicciones del país durante \textbf{abril de 2026}. El \textbf{promedio nacional ponderado por población} se ubicó en \$322.566, con una \textbf{dispersión de 12,5\%} entre la provincia más accesible y la más cara.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.15}
+\caption{Valor de la canasta por provincia y promedio nacional (abril 2026)}
+\begin{tabular}{@{}l r r @{\hspace{1cm}} l r r@{}}
+\toprule
+\textbf{Provincia} & \textbf{Canasta} & \shortstack{\textbf{Vs.}\\\textbf{prom. (\%)}} & 
+\textbf{Provincia} & \textbf{Canasta} & \shortstack{\textbf{Vs.}\\\textbf{prom. (\%)}} \\
+\midrule
+Córdoba             & 309.694 & -3,99\% & CABA              & 325.410 & +0,88\% \\
+Entre Ríos          & 315.110 & -2,31\% & Salta             & 325.446 & +0,89\% \\
+Tucumán             & 316.224 & -1,97\% & San Luis          & 325.527 & +0,92\% \\
+Misiones            & 317.135 & -1,68\% & La Pampa          & 326.658 & +1,27\% \\
+Formosa             & 317.186 & -1,67\% & Jujuy             & 326.980 & +1,37\% \\
+Santiago del Estero & 318.473 & -1,27\% & La Rioja          & 327.604 & +1,56\% \\
+Chaco               & 318.963 & -1,12\% & Catamarca         & 328.082 & +1,71\% \\
+Corrientes          & 321.660 & -0,28\% & Neuquén           & 330.778 & +2,55\% \\
+San Juan            & 322.142 & -0,13\% & Río Negro         & 331.612 & +2,80\% \\
+Mendoza             & 323.647 & +0,33\% & Tierra del Fuego  & 337.441 & +4,61\% \\
+Santa Fe            & 323.701 & +0,35\% & Chubut            & 339.663 & +5,30\% \\
+Buenos Aires        & 324.062 & +0,46\% & Santa Cruz        & 349.730 & +8,42\% \\
+\midrule
+\multicolumn{6}{c}{\textbf{Promedio nacional: \$322.566}} \\
+\bottomrule
+\end{tabular}\\[0.2cm]
+\caption*{Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}}
+\label{tab:canasta_provincias}
+\end{table}
+
+Córdoba encabeza el ranking como la jurisdicción con menor costo de la canasta (\$309.694, -3,99\% respecto al promedio nacional), mientras que en el extremo opuesto se ubica \textbf{Santa Cruz} (\$349.730, +8,42\%), con una diferencia absoluta de \$40.036 entre ambas. La mediana provincial se encuentra en torno a los \$324.000, lo que indica que la mayor parte de las jurisdicciones se mueven en un rango acotado respecto al promedio, con los extremos concentrados en provincias específicas del centro-norte y de la Patagonia.
+
+Se observa en la figura \ref{fig:mapa_canasta_2026-04} un \textbf{patrón geográfico claro}. Las provincias del \textbf{NEA y NOA} (Misiones, Formosa, Chaco, Corrientes, Tucumán y Santiago del Estero), junto con \textbf{Entre Ríos y Córdoba}, se sitúan por debajo del promedio nacional, con valores que oscilan entre -3,99\% y -0,28\%. En contraposición, las cinco provincias de la \textbf{Patagonia} (Neuquén, Río Negro, Tierra del Fuego, Chubut y Santa Cruz) figuran todas por encima del promedio, con variaciones que van desde +2,55\% hasta +8,42\%. Este diferencial refleja factores estructurales conocidos: mayores costos logísticos para abastecer regiones alejadas de los principales centros de producción y distribución, escala más reducida del comercio minorista, y una menor presencia de cadenas que dificulta la competencia de precios en góndola.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Mapa del valor de la canasta por provincia (abril 2026)}
+        \label{fig:mapa_canasta_2026-04}
+        \includegraphics[width=0.45\linewidth]{figuras/mapa_canasta_2026-04.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+    \end{minipage}
+\end{figure}
+
+El \textbf{AMBA y la región Pampeana} se ubican en una posición intermedia, muy próximos al promedio nacional. Buenos Aires (\$324.062, +0,46\%) y CABA (\$325.410, +0,88\%) presentan valores apenas superiores al agregado, mientras que Santa Fe (\$323.701, +0,35\%) y Mendoza (\$323.647, +0,33\%) se mantienen virtualmente alineados con el promedio.
+
+\subsection*{Canasta de consumo en centros urbanos}
+
+Más allá del promedio provincial, el valor de la canasta presenta una marcada heterogeneidad incluso dentro de una misma jurisdicción. Para visualizar esta dispersión a nivel de sucursal individual, el ICM-UADE se complementa con un \textbf{\href{https://santiagoriverti.github.io/mapa_precios_argentina_abril2026/}{mapa georreferenciado}} que muestra el valor de la canasta en cada uno de los \textbf{2.371 puntos de venta del país} relevados por el SEPA en abril de 2026, distribuidos en \textbf{477 localidades} de las 24 jurisdicciones.
+
+El mapa permite identificar diferencias de precios entre sucursales próximas geográficamente, entre cadenas dentro de un mismo barrio y entre formatos comerciales (hipermercados, supermercados y autoservicios). Al hacer clic sobre cada sucursal se despliega el \textbf{detalle completo de los 30 productos de la canasta}, con precio unitario, cantidad y subtotal por categoría, lo que permite identificar qué productos explican las diferencias de precio entre puntos de venta.
+
+La distribución de precios entre sucursales individuales revela una dispersión muy superior a la observada a nivel provincial. Mientras que la diferencia entre la provincia más barata (Córdoba) y la más cara (Santa Cruz) es del 12,9\%, \textbf{la diferencia entre la sucursal más barata y la más cara del país alcanza el 32,0\%}, con un mínimo de \$271.282 y un máximo de \$358.177. El 50\% central de las sucursales se ubica entre \$319.756 y \$327.237, evidenciando que la mayor parte de los puntos de venta opera en un rango acotado, mientras que los extremos corresponden a casos particulares vinculados a estrategias comerciales agresivas (precios muy bajos) o a contextos geográficos específicos como la Patagonia profunda (precios elevados por costos logísticos).
+
+Esta herramienta resulta particularmente útil para identificar diferencias en zonas densamente pobladas como el \textbf{AMBA}, que concentra más del 72\% de las sucursales del relevamiento (1.717 puntos de venta entre CABA y la Provincia de Buenos Aires). Allí conviven distintos formatos comerciales con estrategias de precios diferenciadas según el posicionamiento de cada cadena, permitiendo a los consumidores comparar opciones reales en su zona de cercanía\footnote{Los datos utilizados no contemplan los supermercados de origen asiático ni otras cadenas informales provinciales o que no reportan al SEPA.}.
+
+A continuación se presentan dos casos de estudio que ilustran la utilidad del mapa para el análisis de zonas específicas: el barrio de \textbf{Belgrano} en CABA, como ejemplo de zona urbana de alta densidad comercial, y la localidad de \textbf{Pinamar} en la Costa Atlántica bonaerense, como ejemplo de zona turística estacional.
+
+\subsubsection*{Caso 1: Belgrano (CABA)}
+
+El barrio de Belgrano concentra \textbf{73 sucursales} relevadas por el SEPA en abril de 2026, distribuidas entre cuatro cadenas. El valor promedio de la canasta en el barrio asciende a \textbf{\$325.877}, levemente superior al promedio de CABA (\$324.404) y al promedio nacional (\$322.566), con diferencias de +0,60\% y +0,94\% respectivamente.
+
+El análisis por cadena revela que los \textbf{formatos grandes} (Carrefour hipermercado y Carrefour Market) ofrecen los precios más bajos del barrio (\$322.108 y \$322.301 respectivamente), mientras que el formato de proximidad \textbf{Carrefour Express}, con 31 sucursales distribuidas en todo Belgrano, presenta el seguido precio promedio más alto (\$327.253); seguida por Disco (\$337.768). Coto se ubica en una posición intermedia con sus 7 sucursales del barrio, todas con precios muy similares en torno a los \$323.000-\$324.500.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.15}
+\caption{Cadenas presentes en Belgrano (CABA, abril 2026)}
+\begin{tabular}{@{}l c r@{}}
+\toprule
+\textbf{Cadena} & \textbf{Sucursales} & \textbf{Canasta promedio} \\
+\midrule
+Carrefour Market    & 3  & \$322.108 \\
+Carrefour           & 1  & \$322.301 \\
+DIA                 & 25 & \$322.417 \\
+Coto                & 7  & \$324.079 \\
+Carrefour Express   & 31 & \$327.253 \\
+Disco               & 6  & \$337.768 \\
+\midrule
+\textbf{Promedio Belgrano} & \textbf{73} & \textbf{\$325.877} \\
+\bottomrule
+\end{tabular}\\[0.2cm]
+\caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+\label{tab:belgrano_cadenas}
+\end{table}
+
+La dispersión total dentro del barrio es de apenas \textbf{5,5\%} entre la sucursal más barata (\$321.942) y la más cara (\$339.537), confirmando la fuerte homogeneidad de precios en zonas de alta competencia.
+
+\subsubsection*{Caso 2: Pinamar y la Costa Atlántica}
+
+La Costa Atlántica bonaerense presenta una dinámica de precios distinta. Con un promedio general de \textbf{\$329.096}, las localidades costeras se ubican \textbf{+1,86\% por encima del promedio nacional}, reflejando los mayores costos logísticos asociados a la lejanía de los centros de producción y, en menor medida, la estacionalidad turística que caracteriza a estas zonas.
+
+En \textbf{Pinamar} se relevaron 3 sucursales de 3 cadenas distintas, con un promedio de \$329.077 y una dispersión interna significativa: la diferencia entre la sucursal más barata (Cooperativa Obrera, \$323.336) y la más cara (Disco, \$337.815) alcanza el \textbf{4,5\%}, considerablemente mayor que la observada en Belgrano.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.15}
+\caption{Sucursales relevadas en Pinamar (abril 2026)}
+\begin{tabular}{@{}l l r@{}}
+\toprule
+\textbf{Cadena} & \textbf{Sucursal} & \textbf{Canasta} \\
+\midrule
+Cooperativa Obrera & Pinamar & \$323.336 \\
+Toledo             & Pinamar & \$326.079 \\
+Disco              & Pinamar & \$337.815 \\
+\midrule
+\textbf{Promedio Pinamar} & & \textbf{\$329.077} \\
+\bottomrule
+\end{tabular}\\[0.2cm]
+\caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+\label{tab:pinamar_sucursales}
+\end{table}
+
+El cuadro \ref{tab:costa_ranking} presenta el ranking comparativo de las principales localidades de la Costa Atlántica bonaerense. Todas se ubican por encima del promedio nacional, con diferenciales que oscilan entre +1,71\% (Villa Gesell) y +3,05\% (Necochea). Villa Gesell y Mar del Plata —las dos localidades costeras con mayor población permanente— exhiben los precios más bajos de la región, mientras que \textbf{Necochea} y \textbf{Pinamar} muestran los promedios más altos entre las localidades con varias sucursales.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.15}
+\caption{Ranking de localidades de la Costa Atlántica bonaerense (abril 2026)}
+\begin{tabular}{@{}l c r r@{}}
+\toprule
+\textbf{Localidad} & \textbf{Sucursales} & \textbf{Canasta prom.} & \textbf{Vs. país (\%)} \\
+\midrule
+Necochea                    & 7  & \$332.396 & +3,05\% \\
+Partido de la costa         & 5  & \$329.208 & +2,06\% \\
+Pinamar                     & 3  & \$329.077 & +2,02\% \\
+Miramar                     & 3  & \$328.624 & +1,88\% \\
+Mar del Plata               & 48 & \$328.492 & +1,84\% \\
+Vila Gesell                 & 5  & \$328.080 & +1,71\% \\
+Madariaga                   & 2  & \$324.011 & +0,45\% \\
+\midrule
+\textbf{Promedio Costa Atlántica} & \textbf{66} & \textbf{\$328.555} & \textbf{+1,86\%} \\
+\bottomrule
+\end{tabular}\\[0.2cm]
+\caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+\label{tab:costa_ranking}
+\end{table}
+
+Los dos casos analizados ilustran dos dinámicas comerciales contrastantes que el ICM-UADE permite identificar a nivel de sucursal. \textbf{Belgrano} representa un mercado de alta competencia comercial, con 73 sucursales de 6 cadenas concentradas en un radio acotado, donde la dispersión de precios es mínima (5,5\%) y los valores se ubican muy cerca del promedio nacional. \textbf{Pinamar y la Costa Atlántica}, en cambio, presentan menor densidad comercial, mayor heterogeneidad de precios entre cadenas (4,5\% en Pinamar) y un sobreprecio sistemático respecto al resto del país (+1,86\%) atribuible a factores logísticos y estructurales.
+
+\subsubsection*{Ranking por barrios de CABA}
+
+El ICM-UADE permite también desagregar el análisis a nivel de barrio dentro de la Ciudad Autónoma de Buenos Aires. Sobre las 867 sucursales relevadas en CABA en abril de 2026, distribuidas en los 48 barrios oficiales. La tabla \ref{tab:ranking_barrios_caba} presenta el ranking completo ordenado de mayor a menor valor de la canasta\footnote{Se descartan barrios con menos de dos sucursales.}.
+
+La tabla \ref{tab:ranking_barrios_caba} presenta el ranking de los 48 barrios de CABA con al menos dos sucursales relevadas, ordenados de mayor a menor valor de la canasta. \textbf{Recoleta} encabeza el ranking como el barrio más caro (\$326.547, +0,66\% respecto al promedio de CABA), seguido por \textbf{Puerto Madero} (\$326.083, +0,52\%), \textbf{Palmero} (\$326.066, +0,51\%) y \textbf{Belgrano} (\$325.877, +0,45\%). En el extremo opuesto, los barrios más accesibles son \textbf{Villa Soldati} (\$319.602, -1,48\%), \textbf{Villa Real} (\$320.786, -1,12\%) y \textbf{Parque Avellaneda} (\$321.590, -0,87\%). La dispersión total entre el barrio más caro y el más barato alcanza apenas el \textbf{2,17\%}.
+
+En términos generales, las diferencias territoriales dentro de la Ciudad Autónoma de Buenos Aires resultan acotadas. Si bien \textbf{Recoleta}, \textbf{Puerto Madero}, \textbf{Palermo} y \textbf{Belgrano} se ubican como los barrios con mayor valor promedio de la canasta, y \textbf{Villa Soldati}, \textbf{Villa Real} y \textbf{Parque Avellaneda} aparecen entre los más accesibles, la brecha total entre extremos alcanza apenas el \textbf{2,17\%}. Esto sugiere una elevada homogeneidad de precios entre barrios de CABA, aun considerando diferencias socioeconómicas y de localización. Asimismo, los resultados muestran que los barrios con mayor cantidad de sucursales relevadas —como Palermo, Caballito, Belgrano y Recoleta— se ubican mayormente en torno al promedio general de la ciudad, lo que refuerza la estabilidad espacial observada en los valores de la canasta.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.1}
+\caption{Ranking de barrios de CABA según el valor de la canasta (abril 2026)}
+\footnotesize
+\begin{tabular}{@{}l c r @{\hspace{1cm}} l c r@{}}
+\toprule
+\textbf{Barrio} & \textbf{Suc.} & \textbf{Promedio} & 
+\textbf{Barrio} & \textbf{Suc.} & \textbf{Promedio} \\
+\midrule
+Recoleta            & 36 & 326.547 & Agronomía           & 17 & 323.748 \\
+Puerto Madero       & 7  & 326.083 & Villa Crespo        & 16 & 323.670 \\
+Palermo             & 75 & 326.066 & Villa del Parque    & 15 & 323.644 \\
+Belgrano            & 73 & 325.877 & Mataderos           & 19 & 323.505 \\
+San Nicolás         & 20 & 325.488 & Floresta            & 14 & 323.466 \\
+Núñez               & 8  & 325.043 & Monte Castro        & 14 & 323.367 \\
+Almagro             & 72 & 325.039 & Villa Ortúzar       & 4  & 323.323 \\
+Coghlan             & 11 & 324.941 & Nueva Pompeya       & 9  & 323.239 \\
+Villa Devoto        & 16 & 324.827 & La Boca             & 10 & 323.221 \\
+Parque Chas         & 6  & 324.750 & Villa Urquiza       & 5  & 323.152 \\
+Caballito           & 51 & 324.648 & La Paternal         & 5  & 323.108 \\
+Balvanera           & 33 & 324.637 & Saavedra            & 7  & 323.107 \\
+Vélez Sársfield     & 7  & 324.589 & Barracas            & 22 & 323.032 \\
+Parque Patricios    & 13 & 324.259 & Villa General Mitre & 7  & 322.943 \\
+Monserrat           & 31 & 324.237 & Boedo               & 11 & 322.680 \\
+Flores              & 46 & 324.209 & Villa Lugano        & 14 & 322.359 \\
+Constitución        & 11 & 324.182 & Parque Chacabuco    & 10 & 322.284 \\
+Liniers             & 20 & 324.119 & Parque Avellaneda   & 7  & 321.590 \\
+San Cristóbal       & 10 & 324.002 & Villa Real          & 5  & 320.786 \\
+Villa Pueyrredón    & 21 & 323.949 & Villa Soldati       & 2  & 319.602 \\
+Chacarita           & 26 & 323.921 &                      &    &         \\
+\midrule
+\multicolumn{6}{c}{\textbf{Promedio CABA: \$324.404 \quad | \quad Promedio país: \$322.566}} \\
+\bottomrule
+\end{tabular}\\[0.2cm]
+\caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+\label{tab:ranking_barrios_caba}
+\end{table}
+
+\subsection*{Canasta de consumo por cadena de supermercado}
+
+El ICM-UADE permite también desagregar el valor de la canasta por cadena comercial, identificando qué empresas ofrecen los precios más competitivos y cuáles los más altos. La figura \ref{fig:ranking_cadenas_nacional_042026} presenta el ranking nacional de cadenas según el precio promedio de la canasta en abril de 2026, considerando únicamente aquellas con al menos 10 sucursales relevadas en el país.
+
+A nivel nacional, \textbf{La Anónima} encabeza el ranking de cadenas con la canasta más cara (\$335.229), seguida por \textbf{Toledo} (\$333.076) y \textbf{Jumbo} (\$331.315). El posicionamiento de La Anónima como la cadena más cara del país se explica por su fuerte concentración en la Patagonia, región donde los costos logísticos elevan estructuralmente los precios; Toledo, por su parte, opera exclusivamente en la Costa Atlántica bonaerense, zona también caracterizada por sobreprecios respecto al promedio. En el caso de Jumbo, el alto valor refleja su posicionamiento premium dentro del grupo Cencosud, orientado a consumidores de mayor poder adquisitivo.
+
+En el extremo opuesto, \textbf{Hipermercado Libertad} se posiciona como la cadena más accesible del país (\$298.914), con un precio promedio significativamente inferior al resto. Le siguen \textbf{Carrefour} (\$317.116), \textbf{Carrefour Market} (\$320.354) y \textbf{DIA} (\$320.472). La estructura interna de Carrefour resulta especialmente reveladora: el formato hipermercado (\$317.116) es más barato que el formato intermedio Market (\$320.354), y este a su vez es más barato que el formato de proximidad Express (\$325.608). Esta progresión confirma una regla general del retail: \textbf{los formatos más pequeños presentan precios más altos por unidad}, debido a menores economías de escala y mayores costos operativos por metro cuadrado.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Ranking de cadenas a nivel nacional (abril 2026)}
+        \label{fig:ranking_cadenas_nacional_042026}
+        \includegraphics[width=0.75\linewidth]{figuras/ranking_cadenas_nacional_042026.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}}
+    \end{minipage}
+\end{figure}
+
+La dispersión entre la cadena más cara y la más barata a nivel nacional alcanza el \textbf{12,1\%}, casi idéntica a la dispersión interprovincial (12,9\%) observada en la sección anterior.
+
+La figura \ref{fig:ranking_cadenas_amba_042026} restringe el análisis al \textbf{AMBA (CABA + Provincia de Buenos Aires)}, donde la competencia comercial es más intensa por la alta densidad de cadenas operando simultáneamente. En esta región, el ranking cambia significativamente respecto al nacional.
+
+\textbf{Disco} se ubica como la cadena más cara del AMBA (\$336.544), consistente con su posicionamiento premium en barrios de mayor poder adquisitivo. Le siguen \textbf{Toledo} (\$333.076), que opera principalmente en la Costa Atlántica bonaerense, y \textbf{Jumbo} (\$332.734), también del segmento premium del grupo Cencosud. En el extremo opuesto, \textbf{Cooperativa Obrera} aparece como la cadena más accesible del AMBA (\$319.299), reflejo de su modelo cooperativo que prioriza precios bajos para sus socios por sobre la maximización de ganancias. Le siguen muy de cerca \textbf{Carrefour} (\$319.523), \textbf{ChangoMas} (\$320.155) y \textbf{DIA} (\$320.860).
+
+Un hallazgo destacable es que \textbf{La Anónima} —la cadena más cara a nivel nacional— se ubica en una posición intermedia dentro del AMBA (\$328.224, quinta más cara), lo que confirma que su elevado promedio nacional está fuertemente influido por sus sucursales patagónicas y no por su política general de precios. De forma análoga, \textbf{Hipermercado Libertad} no aparece en el ranking AMBA porque concentra sus operaciones casi exclusivamente en Córdoba.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Ranking de cadenas a nivel AMBA (abril 2026)}
+        \label{fig:ranking_cadenas_amba_042026}
+        \includegraphics[width=0.75\linewidth]{figuras/ranking_cadenas_amba_042026.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}}
+    \end{minipage}
+\end{figure}
+
+La diferencia entre la cadena más cara (\$336.544) y la más barata (\$319.299) en el AMBA alcanza apenas el \textbf{5,4\%}, considerablemente menor que la dispersión nacional (12,1\%). Esta diferencia confirma que \textbf{la mayor competencia comercial del área metropolitana —donde conviven simultáneamente todos los principales jugadores del mercado— reduce los diferenciales de precios al consumidor}. En provincias periféricas, donde una sola cadena puede dominar el mercado local, los precios tienden a desviarse más del promedio nacional, generando mayores diferenciales entre puntos de venta.
+
+\section*{Cobertura de venta minorista}
+
+No todas las cadenas de comercialización están presentes en todas las provincias, ni con la misma intensidad. Hay provincias que exhiben una oferta de productos diversificada y mayor presencia de cadenas y sucursales. Los consumidores de las jurisdicciones más densamente pobladas pueden acceder a una canasta de consumo variada. A su vez, en determinadas provincias la comercialización suele ser en establecimientos grandes (como en Buenos Aires) y en otras en pequeños comercios de proximidad (como CABA) donde predominan las cadenas de abastecimiento diario o mensual.
+
+Las distintas cadenas de comercialización presentan estrategias comerciales diversas. Mientras ciertas cadenas se extienden en casi todas las provincias, como Carrefour o Changomás; otras se enfocan en una determinada región, como Coto o La Anónima. Por otro lado, hay cadenas que optan por ofrecer pocos productos en grandes establecimientos, como lo hace Coto; otras se enfocan en pocos productos en pequeñas sucursales, como Dia; y otras presentan un enfoque mixto, como Carrefour con amplia diversidad de productos en establecimientos grandes y pequeños.
+
+\subsection*{Cobertura por provincia}
+
+La figura \ref{fig:cobertura_provincia} exhibe cuántos productos únicos se ofrecen en cada una de las jurisdicciones, cuántas cadenas de supermercados hay presentes en cada provincia y la cantidad de sucursales totales en cada una de ellas.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Cobertura del relevamiento SEPA por provincia}
+        \label{fig:cobertura_provincia}
+        \includegraphics[width=0.75\linewidth]{figuras/cobertura_provincia.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+    \end{minipage}
+\end{figure}
+
+Se observa que en aquellas provincias donde hay más población y una estructura más urbana los consumidores pueden acceder a una canasta más variada. Mientras en Buenos Aires hay 75.166 productos únicos, en Tierra del Fuego la cantidad es casi cuatro veces menor, con 19.465 productos únicos.
+
+La cantidad de cadenas presentes sigue un patrón similar al de la variedad de productos, aunque existen diferencias relevantes entre provincias. Mientras que en Buenos Aires hay 21 cadenas presentes y en CABA y en Córdoba 16; en Tierra del Fuego (2), Santa Cruz (3) y Santiago del Estero (4) la cobertura es notablemente menor.
+
+Respecto de la cantidad de sucursales totales, CABA lidera el ranking con 1.167 sucursales totales, seguida por la provincia de Buenos Aires con 978. Esto evidencia que los supermercados están más concentrados en grandes establecimientos en Buenos Aires, mientras que en CABA predominan los formatos más pequeños como comercios de proximidad. El resto de las provincias tiene un número significativamente menor de sucursales: La Rioja y Formosa cuentan con siete sucursales cada una, y Catamarca con ocho.
+
+\subsection*{Cobertura por cadena}
+
+La figura \ref{fig:cobertura_cadena} exhibe, para las distintas cadenas de supermercados en Argentina, cuántos productos únicos ofrece cada una, en cuántas provincias está presente y cuantas sucursales posee en total.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Cobertura de cadenas de venta minorista por provincia}
+        \label{fig:cobertura_cadena}
+        \includegraphics[width=0.75\linewidth]{figuras/cobertura_cadena.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+    \end{minipage}
+\end{figure}
+
+Carrefour lidera el ranking de productos únicos con un total de 37.149; seguido por las franquicias de Changomás con aproximadamente 30.000 productos únicos; Market (perteneciente a Carrefour) con 18.681 y Dia con 4.329.
+
+Respecto de la cobertura en las provincias, la mayor cobertura la tiene Carrefour, con presencia en 20 provincias, seguido de Changomás y Vea presentes en 19 provincias. Coto solo se encuentra presente en 6 provincias, Jumbo en 9, Disco en 4 y La Anónima en 11.
+
+Respecto de la cantidad de sucursales, Dia es la que mayor cantidad tiene con 978 sucursales únicas, enfocándose en comercios de proximidad. Le siguen Express (perteneciente a Carrefour) con 517 sucursales y La Anónima con 173.
+
+\subsection*{Presencia e intensidad de cadena por provincia}
+
+La figura \ref{fig:matriz_presencia} indica en cuáles provincias está presente cada cadena de supermercado. Las cadenas Dia y Coto se enfocan en las provincias con mayor población (como Buenos Aires, CABA y Córdoba); Changomás, Carrefour y Vea están presentes en casi todas las provincias, con formatos como Express enfocados en las zonas de mayor densidad; mientras que La Anónima y algunas franquicias de Carrefour mantienen presencia en provincias con menor cobertura total, con la diferencia que La Anónima está más enfocada en provincias como Tierra del Fuego.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Presencia de cada cadena en cada provincia}
+        \label{fig:matriz_presencia}
+        \includegraphics[width=0.75\linewidth]{figuras/matriz_presencia.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+    \end{minipage}
+\end{figure}
+
+Este patrón de presencia territorial refleja estrategias comerciales diferenciadas según el perfil demográfico y logístico de cada región. Las cadenas con mayor cobertura nacional tienden a operar bajo esquemas multiformato y redes de distribución extensas, lo que les permite sostener presencia tanto en grandes centros urbanos como en provincias periféricas. En contraste, las cadenas con menor expansión geográfica concentran sus operaciones en mercados donde poseen ventajas históricas, logísticas o de posicionamiento regional. La elevada concentración de algunas cadenas en determinadas jurisdicciones también ayuda a explicar parte de las diferencias observadas en la variedad de productos y en los niveles de precios provinciales, ya que una menor cantidad de competidores reduce la intensidad competitiva en góndola y limita la diversidad de oferta disponible para los consumidores.
+
+La figura \ref{fig:matriz_intensidad} exhibe la intensidad de oferta de productos de cada cadena de supermercado para las distintas provincias. Mientras Dia y Coto están muy concentrados en Buenos Aires y CABA; Changomás, Carrefour y Vea tienen una distribución más heterogénea; y La Anónima está más concentrada en el sur.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{\linewidth}
+        \centering
+        \caption{Intensidad del relevamiento por cadena y provincia}
+        \label{fig:matriz_intensidad}
+        \includegraphics[width=0.75\linewidth]{figuras/matriz_intensidad.png}\\[0.2cm]
+        \caption*{\small Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+    \end{minipage}
+\end{figure}
+
+La intensidad de oferta permite observar no solo dónde está presente cada cadena, sino también el peso relativo que tiene dentro de cada mercado provincial. Las cadenas con mayor densidad de productos en una jurisdicción tienden a contar con una red más desarrollada de sucursales, centros logísticos y formatos comerciales diversificados, lo que amplía la variedad disponible para los consumidores. En este sentido, la fuerte concentración de Dia y Coto en el AMBA refleja un modelo orientado a mercados urbanos de alta densidad poblacional, mientras que cadenas como Carrefour, Changomás y Vea muestran una estrategia de alcance nacional más equilibrada. Por su parte, la elevada intensidad de La Anónima en provincias patagónicas evidencia su especialización regional y su rol dominante en zonas donde la presencia de otras cadenas nacionales es más limitada.
+
+\clearpage
+\section*{Metodología}
+
+A continuación se detalla la metodología implementada en el presente trabajo: las fuentes utilizadas, el procesamiento de los datos y sus limitaciones.
+
+\subsection*{Fuente de datos}
+
+La información de precios proviene del \textbf{Sistema Electrónico de Publicidad de Precios Argentinos (SEPA)}, creado por la Resolución 12/2016 de la ex Secretaría de Comercio y administrado actualmente por el Ministerio de Economía \citep{SEPA_precios}. El SEPA obliga a los comercios minoristas de venta al público de productos de consumo masivo a publicar diariamente, antes de las 06:00 hs, los precios vigentes en cada uno de sus puntos de venta.
+
+El presente informe combina dos dimensiones de análisis:
+
+\begin{itemize}
+    \item \textbf{Análisis transversal}: relevamiento del último mes disponible, utilizado para construir el ranking provincial de la canasta, los mapas de cobertura y la presencia de cadenas. Este corte contiene 27 banderas comerciales operando en 24 jurisdicciones, 3.098 sucursales y 85.911 productos únicos identificados por código EAN.
+    \item \textbf{Análisis longitudinal (serie histórica)}: panel mensual desde \textbf{marzo de 2024 hasta mayo de 2026} (27 meses), construido a partir del procesamiento de los paquetes históricos del SEPA. Este componente permite seguir la evolución de la canasta a lo largo del tiempo y compararla con el IPC del INDEC.
+\end{itemize}
+
+\subsection*{Selección de productos de la canasta}
+
+A partir del universo total de productos relevados, se construyó una canasta de 30 ítems aplicando los siguientes filtros sucesivos:
+
+\begin{itemize}
+    \item \textbf{Código EAN oficial:} se incluyeron únicamente productos con código de barras estandarizado (EAN/GTIN), descartando códigos internos asignados por una cadena en particular, que no son comparables entre comercios.
+    \item \textbf{Cobertura geográfica:} se exigió que el producto estuviera disponible en las 24 jurisdicciones del país.
+    \item \textbf{Cobertura comercial:} se requirió presencia en al menos 15 banderas comerciales distintas, asegurando que el producto no fuera exclusivo de una cadena particular.
+    \item \textbf{Estabilidad de precio:} se descartaron productos con coeficiente de variación de precio superior a 0,5, criterio orientado a excluir registros con dispersiones anómalas atribuibles a errores de carga.
+\end{itemize}
+
+Sobre el subconjunto resultante (1.445 productos), se eligieron 30 ítems representativos de las principales categorías del consumo masivo: \textbf{lácteos, almacén, bebidas, limpieza, higiene personal y snacks}. La selección priorizó marcas líderes del mercado argentino y rangos de precios diversificados para evitar la concentración del peso de la canasta en pocos productos.
+
+\subsection*{Composición detallada de la canasta}
+
+La canasta seleccionada se compone de 30 productos distribuidos en seis categorías. La Tabla \ref{tab:composicion_canasta} presenta el detalle completo, indicando para cada ítem el código EAN, la descripción comercial, la marca, la presentación y la cantidad mensual asignada.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.1}
+\caption{Composición detallada de la canasta}
+\footnotesize
+\begin{tabular}{@{}l l l l c c@{}}
+\toprule
+\textbf{Categoría} & \textbf{EAN} & \textbf{Producto} & \textbf{Marca} & \textbf{Presentación} & \textbf{Cant. mensual} \\
+\midrule
+Lácteos   & 7790742363008 & Leche entera UAT clásica & La Serenísima & 1 L     & 20 \\
+Lácteos   & 7791337007628 & Yogur firme vainilla     & Yogurísimo    & 190 g   & 8 \\
+Lácteos   & 7791337061361 & Queso crema clásico      & Casancrem     & 290 g   & 2 \\
+Lácteos   & 7793940052002 & Manteca                  & La Serenísima & 100 g   & 2 \\
+Lácteos   & 7791337007253 & Leche chocolatada Puro Cacao & Cindor    & 1 L     & 4 \\
+\midrule
+Almacén   & 7790272001029 & Aceite de girasol        & Natura        & 1,5 L   & 2 \\
+Almacén   & 7790070433114 & Arroz Parboil Selección  & Gallo Oro     & 500 g   & 2 \\
+Almacén   & 7790070320285 & Fideos largos secos      & Favorita      & 500 g   & 4 \\
+Almacén   & 7792180140708 & Harina leudante ultra refinada & Pureza  & 1 kg    & 2 \\
+Almacén   & 7792710000182 & Yerba mate tradicional   & Amanda        & 500 g   & 2 \\
+Almacén   & 7790550000157 & Café molido              & La Planta     & 250 g   & 1 \\
+Almacén   & 7790040143234 & Galletitas dulces sabor chocolate & Chocolinas & 250 g & 4 \\
+Almacén   & 7790072002080 & Sal fina                 & Celusal       & 500 g   & 1 \\
+\midrule
+Bebidas   & 7790895000232 & Gaseosa cola lata        & Coca Cola     & 354 cc  & 8 \\
+Bebidas   & 7790895067570 & Gaseosa cola sin azúcar  & Coca Cola     & 2,25 L  & 4 \\
+Bebidas   & 7798062548716 & Agua saborizada manzana  & Levité        & 500 ml  & 8 \\
+Bebidas   & 7793147118860 & Cerveza lata             & Schneider     & 473 cc  & 6 \\
+Bebidas   & 7798074864675 & Vino tinto Malbec        & El Portillo   & 750 ml  & 2 \\
+\midrule
+Limpieza  & 7790132098459 & Lavandina                & Ayudín        & 1 L     & 2 \\
+Limpieza  & 7791290794054 & Detergente Bio Active limón & CIF        & 300 ml  & 2 \\
+Limpieza  & 7793253003500 & Limpiador líquido lavanda & Poett        & 900 ml  & 2 \\
+\midrule
+Higiene   & 7791293047447 & Shampoo Ritual Reparación & Dove         & 400 ml  & 1 \\
+Higiene   & 7791293045948 & Acondicionador Crema Balance & Sedal     & 340 ml  & 1 \\
+Higiene   & 7791293051208 & Jabón de tocador original & Dove         & 90 g    & 4 \\
+Higiene   & 7791293049557 & Antitranspirante Nutritive & Rexona      & 150 ml  & 2 \\
+Higiene   & 7891024183083 & Hilo dental Total con flúor & Colgate    & 1 unid. & 1 \\
+Higiene   & 7790770601899 & Toallas femeninas clásica suave & Nosotras & 16 unid. & 2 \\
+Higiene   & 7790250015840 & Papel higiénico Max hoja simple 4x100m & Higienol & 40 m² & 2 \\
+\midrule
+Snacks    & 7790580327415 & Confites de chocolate    & Rocklets      & 40 g    & 2 \\
+Snacks    & 7790580716707 & Snacks sabor jamón       & Saladix       & 100 g   & 2 \\
+\bottomrule
+\end{tabular}\\[0.2cm]
+\caption*{Fuente: Instituto de Economía de UADE (INECO) en base a \cite{SEPA_precios}.}
+\label{tab:composicion_canasta}
+\end{table}
+
+La canasta se compone de \textbf{30 productos en total}: cinco lácteos, ocho de almacén, cinco bebidas, tres productos de limpieza, siete de higiene personal y dos snacks. Estos productos se eligen por su presencia y comparabilidad entre regiones y cadenas.
+
+La estructura por categoría resulta en \textbf{5 productos lácteos} (con leche fluida y chocolatada como ítems de mayor peso por cantidad), \textbf{8 productos de almacén}, \textbf{5 bebidas} (gaseosas, agua saborizada, cerveza y vino), \textbf{3 productos de limpieza}, \textbf{7 productos de higiene personal} y \textbf{2 snacks}. Las cantidades mensuales asignadas reflejan patrones de consumo típicos para un hogar de cuatro personas, con mayor frecuencia para productos perecederos de uso diario (leche, yogur) y menor para artículos de uso prolongado (shampoo, papel higiénico).
+
+\subsection*{Ponderación de productos}
+
+A cada producto se le asignó una \textbf{cantidad mensual estimada para un hogar tipo de cuatro integrantes}, basada en consumos típicos del mercado argentino. La canasta total resulta de la suma de los productos de precio por cantidad asignada:
+
+\begin{equation*}
+\text{Canasta}_{p,t} = \sum_{i=1}^{30} \text{precio}_{i,p,t} \times q_{i}
+\end{equation*}
+
+\noindent donde $\text{precio}_{i,p,t}$ es el precio promedio del producto $i$ en la provincia $p$ en el período $t$, y $q_{i}$ es la cantidad mensual asignada al producto $i$. Se aclara que estas cantidades \textbf{no provienen de la Encuesta Nacional de Gastos de los Hogares (ENGHo) del INDEC}, sino de una estimación propia, y deben interpretarse como una elección metodológica explícita y no como una canasta básica oficial.
+
+\subsection*{Cálculo del precio provincial}
+
+Para cada producto y cada provincia, se calculó el \textbf{precio promedio simple} de todas las observaciones registradas en las sucursales de esa provincia, sin distinguir entre cadenas ni ponderar por participación de mercado. Se utilizó el campo \texttt{productos\_precio\_lista}, que corresponde al precio de góndola sin descuentos por promociones, tarjetas de fidelización ni segmentación del consumidor.
+
+\subsection*{Construcción del indicador nacional}
+
+El valor nacional de la canasta se calcula como una \textbf{media ponderada de las canastas provinciales}, utilizando como pesos la población de cada jurisdicción según el Censo Nacional 2022 del INDEC (45.892.285 habitantes en las 24 jurisdicciones):
+
+\begin{equation*}
+\text{Canasta nacional}_{t} = \sum_{p=1}^{24} \omega_{p} \cdot \text{Canasta}_{p,t}, \qquad \omega_{p} = \frac{\text{Población}_p}{\sum_{j} \text{Población}_j}
+\end{equation*}
+
+Esta ponderación refleja el peso demográfico de cada provincia en el agregado nacional, asignando mayor influencia a las jurisdicciones más pobladas (Buenos Aires, Córdoba, Santa Fe, CABA).
+
+Cuando un producto de la canasta no fue encontrado en las sucursales de una provincia determinada, se imputó su precio utilizando el \textbf{promedio nacional} de ese producto. Este criterio preserva la comparabilidad entre provincias garantizando que todas se evalúan sobre la misma canasta de 30 ítems, evitando que una provincia con baja cobertura aparezca artificialmente como más barata por falta de datos.
+
+\subsection*{Construcción de la serie histórica}
+
+La serie temporal mensual se construyó procesando los paquetes semestrales del SEPA correspondientes al período 2022--2026. Para cada mes se calculó la canasta nacional ponderada según el procedimiento descrito, aplicando los mismos criterios de selección, filtrado e imputación. La serie cubre \textbf{27 meses consecutivos desde marzo de 2023 hasta abril de 2026}.
+
+Se descartaron los meses de \textbf{enero a abril de 2023}, período durante el cual el panel de cadenas reportantes del SEPA presentaba cobertura insuficiente: productos clave de la canasta (leche larga vida, fideos, manteca) no aparecían en el dataset o eran reportados por una única cadena con menos de 30 observaciones mensuales. Esta limitación distorsionaba tanto el nivel absoluto como las variaciones mensuales calculadas. La serie de variaciones mensuales propiamente dichas comienza en \textbf{julio de 2023}, una vez que el panel se estabilizó.
+
+\subsection*{Comparación con el IPC INDEC}
+
+Para evaluar el comportamiento de la canasta como indicador de inflación, se construyó una comparativa con el \textbf{Índice de Precios al Consumidor (IPC)} publicado mensualmente por el INDEC \citep{IPC_INDEC}, considerando tanto el Nivel General como la división Alimentos y Bebidas no Alcohólicas. Ambas series fueron reindexadas con base 100 en marzo de 2023, lo que permite comparar directamente la inflación acumulada por cada indicador.
+
+Es importante aclarar que el IPC INDEC y el \textbf{ICM-UADE} no son indicadores estrictamente comparables: el IPC se construye sobre 12 divisiones del gasto (alimentos, vivienda, transporte, salud, educación, entre otras) según la estructura de la Encuesta Nacional de Gastos de los Hogares, mientras que el ICM-UADE refleja únicamente productos de consumo masivo en supermercados. Las diferencias entre ambas series son, por lo tanto, una fuente de información en sí mismas: revelan cómo se mueven los precios de góndola respecto al promedio general de la economía, donde el IPC se modera por la dinámica de servicios regulados, salud, educación y otros rubros.
+
+\subsection*{Limitaciones}
+
+\begin{itemize}
+    \item La canasta omite \textbf{productos frescos} (carne, frutas, verduras, pan), que no cuentan con código EAN unificado y por lo tanto no son directamente comparables entre cadenas.
+    \item La \textbf{cobertura de cadenas por provincia es heterogénea}: en algunas jurisdicciones del NOA y la Patagonia, los precios provienen de un número reducido de cadenas, lo que puede sesgar el promedio provincial.
+    \item Los precios utilizados corresponden al precio de \textbf{góndola sin descuentos}; el gasto efectivo de los hogares puede ser menor cuando hacen uso sistemático de promociones, tarjetas de fidelización o programas de descuentos.
+    \item La \textbf{ponderación de la canasta} es una estimación propia y no representa la estructura de gasto promedio de los hogares argentinos según ENGHo.
+    \item La \textbf{cobertura del SEPA pre-mayo 2023} fue heterogénea, lo que limita la comparación de la canasta con períodos anteriores. El indicador es robusto a partir de esa fecha.
+    \item El ICM-UADE y el IPC INDEC \textbf{cubren universos distintos}; su comparación debe interpretarse como dos visiones complementarias de la dinámica de precios, no como indicadores intercambiables.
+    \item El análisis no incluye comercios informales o que no reportan precios al SEPA como las cadenas de supermercados de origen asiático, almacenes de barrios, entre otras.
+\end{itemize}
+
+\clearpage
+\nocite{repo_canasta, repo_precios, repo_evolucion, repo_evolucion_AMBA}
+\bibliography{bibliografia}  
+
+\end{document}
+
+% =========================
+% Notas finales (comentadas):
+% - Para fijar fecha manualmente: reemplazar \Fecha{} por \Fecha{23 de septiembre de 2025}
+% - Para cambiar el título: editar \TituloInforme{...} y \AutorInforme{...} arriba.
+% - Para cambiar el nombre del instituto/subtítulo: \JournalNameText y \JournalSubtitleText.
+% - Para editar el pie (email/enlace): buscar el bloque fancyfoot[...] y editar.
+% - Para añadir tablas: usar entorno tabular y 'booktabs' (añadir \usepackage{booktabs}).
+% - Para compilar con XeLaTeX/LuaLaTeX: quitar inputenc/fontenc/lmodern/charter y usar fontspec.
+% =========================

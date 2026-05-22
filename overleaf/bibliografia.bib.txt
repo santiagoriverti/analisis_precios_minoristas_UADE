@@ -1,0 +1,53 @@
+@techreport{SEPA_precios,
+  author       = {{MECON}},
+  title        = {Sistema Electrónico de Publicidad de Precios Argentinos ({SEPA})},
+  institution  = {Ministerio de Economía de la Nación Argentina},
+  year         = {2024},
+  url          = {https://datos.produccion.gob.ar/dataset/sepa-precios},
+  note         = {Disponible en \url{https://datos.produccion.gob.ar/dataset/sepa-precios}}
+}
+
+@techreport{IPC_INDEC,
+  author       = {{INDEC}},
+  title        = {Índice de Precios al Consumidor ({IPC})},
+  institution  = {Instituto Nacional de Estadística y Censos de la República Argentina},
+  year         = {2026},
+  url          = {https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31},
+  note         = {Disponible en \url{https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31}}
+}
+
+@misc{repo_evolucion,
+  author       = {Riverti, Santiago},
+  title        = {analisis\_{SEPA}\_evolucion: análisis de la evolución temporal de precios {SEPA}},
+  year         = {2026},
+  howpublished = {Repositorio GitHub},
+  url          = {https://github.com/santiagoriverti/analisis_SEPA_evolucion},
+  note         = {Disponible en \url{https://github.com/santiagoriverti/analisis_SEPA_evolucion}}
+}
+
+@misc{repo_canasta,
+  author       = {Riverti, Santiago},
+  title        = {analisis\_canasta\_{SEPA}: construcción y procesamiento de la canasta {SEPA-UADE}},
+  year         = {2026},
+  howpublished = {Repositorio GitHub},
+  url          = {https://github.com/santiagoriverti/analisis_canasta_SEPA},
+  note         = {Disponible en \url{https://github.com/santiagoriverti/analisis_canasta_SEPA}}
+}
+
+@misc{repo_precios,
+  author       = {Riverti, Santiago},
+  title        = {analisis\_precios\_{SEPA}: análisis de precios y cobertura del relevamiento {SEPA}},
+  year         = {2026},
+  howpublished = {Repositorio GitHub},
+  url          = {https://github.com/santiagoriverti/analisis_precios_SEPA},
+  note         = {Disponible en \url{https://github.com/santiagoriverti/analisis_precios_SEPA}}
+}
+
+@misc{repo_evolucion_AMBA,
+  author       = {Riverti, Santiago},
+  title        = {analisis\_{SEPA}\_evolucion: análisis de la evolución temporal de precios {SEPA} en {AMBA}},
+  year         = {2026},
+  howpublished = {Repositorio GitHub},
+  url          = {https://github.com/santiagoriverti/analisis_SEPA_evolucion_AMBA},
+  note         = {Disponible en \url{https://github.com/santiagoriverti/analisis_SEPA_evolucion_AMBA}}
+}
