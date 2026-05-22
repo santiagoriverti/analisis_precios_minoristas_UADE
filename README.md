@@ -7,6 +7,35 @@ Sistema de análisis de precios minoristas argentinos basado en datos del **SEPA
 
 ---
 
+## ▶️ Ejecutar en Google Colab (recomendado)
+
+La forma más simple — no requiere instalar nada en tu computadora.
+
+[![Abrir en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/santiagoriverti/analisis_precios_minoristas_UADE/blob/main/notebooks/MAPA_MES_COMPLETO.ipynb)
+
+### Estructura de carpetas necesaria en tu Google Drive
+
+```
+Mi unidad/
+└── bases_sepa/
+    ├── 042026_pais_parte1COMPLETO.csv.gz   ← archivos SEPA del mes
+    ├── 042026_pais_parte2COMPLETO.csv.gz
+    └── maestros/
+        ├── Maestro de Productos Interno.xlsx
+        └── maestro_sucursales_completo.xlsx
+```
+
+### Pasos
+
+1. Hacé click en **"Abrir en Colab"** arriba
+2. Ejecutá la **Celda 1** (instala dependencias y clona el repo — ~1 minuto)
+3. Modificá la **Celda 2** con el mes que querés analizar y la ruta a tu Drive
+4. Ejecutá **"Ejecutar todo"** → genera mapa, rankings y lo guarda en tu Drive
+
+> Los datos SEPA para 2024-2026 están en: [Google Drive compartido](https://drive.google.com/drive/folders/1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I)
+
+---
+
 ## ¿Qué genera este sistema?
 
 | Análisis | Output |
