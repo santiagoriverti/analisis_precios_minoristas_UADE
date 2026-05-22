@@ -1,0 +1,21 @@
+# ── Core de datos ──────────────────────────────────────────────────────────
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0          # Lectura/escritura de Excel
+pyarrow>=12.0.0           # Parquet (cache eficiente)
+
+# ── Visualización ──────────────────────────────────────────────────────────
+matplotlib>=3.7.0
+folium>=0.14.0            # Mapas interactivos Leaflet
+branca>=0.6.0             # Colormaps para Folium
+
+# ── Agentes / IA ──────────────────────────────────────────────────────────
+anthropic>=0.40.0         # API de Claude (multi-agente + prompt caching)
+
+# ── Jupyter (opcional para notebooks) ─────────────────────────────────────
+jupyter>=1.0.0
+ipykernel>=6.0.0
+ipywidgets>=8.0.0         # Widgets en notebooks
+
+# ── Utilidades ─────────────────────────────────────────────────────────────
+tqdm>=4.65.0              # Barras de progreso

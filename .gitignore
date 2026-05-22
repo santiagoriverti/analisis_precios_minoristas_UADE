@@ -1,0 +1,47 @@
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.env
+
+# ── Jupyter ───────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Datos de entrada (archivos grandes, no versionar) ─────────────────────
+data/input/diarios/*.zip
+data/input/semestrales/*.zip
+data/input/diarios/*.csv
+data/input/diarios/*.csv.gz
+data/cache/*.parquet
+
+# ── Maestros (contienen datos institucionales) ─────────────────────────────
+data/masters/*.xlsx
+data/masters/*.pdf
+data/masters/*.json
+
+# ── Resultados grandes ────────────────────────────────────────────────────
+products/*.html
+data/output/*.xlsx
+
+# ── Memoria SQLite ────────────────────────────────────────────────────────
+memory/state.db
+
+# ── IDE ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.code-workspace
+
+# ── Secretos ──────────────────────────────────────────────────────────────
+.env
+.env.local
+*.key
+
+# ── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

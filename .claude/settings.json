@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pip:*)",
+      "Bash(git:*)",
+      "Bash(jupyter:*)",
+      "Read(data/**)",
+      "Read(src/**)",
+      "Read(notebooks/**)",
+      "Read(scripts/**)",
+      "Write(data/output/**)",
+      "Write(data/cache/**)",
+      "Write(products/**)",
+      "Write(memory/**)"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "sepa-icm-uade"
+version = "1.0.0"
+description = "Análisis de precios minoristas SEPA — ICM-UADE (INECO)"
+authors = [
+    {name = "INECO — Universidad Argentina de la Empresa"},
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "openpyxl>=3.1.0",
+    "pyarrow>=12.0.0",
+    "matplotlib>=3.7.0",
+    "folium>=0.14.0",
+    "branca>=0.6.0",
+    "anthropic>=0.40.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0",
+    "ipywidgets>=8.0.0",
+    "tqdm>=4.65.0",
+]
+
+[project.scripts]
+sepa-semestre = "sepa.agents.orchestrator:_run_semester"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
