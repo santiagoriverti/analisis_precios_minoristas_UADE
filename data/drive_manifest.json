@@ -1,0 +1,48 @@
+{
+  "_nota": "Manifest de archivos SEPA en Google Drive. Actualizar con scripts/actualizar_manifest.py cada vez que haya un mes nuevo.",
+  "_actualizado": "2026-05-22",
+  "_instrucciones": "Los IDs son el parámetro 'id' de la URL de Google Drive: drive.google.com/file/d/ID/view",
+
+  "folders": {
+    "historico_2018_2023": "13GONeBs5lQCSUdBioHYk-8GhfDtIyliD",
+    "reciente_2024_hoy":   "1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I"
+  },
+
+  "maestros": {
+    "_nota": "Archivos de referencia — cambian raramente",
+    "productos_id":   "COMPLETAR_CON_ID_MAESTRO_PRODUCTOS",
+    "sucursales_id":  "COMPLETAR_CON_ID_MAESTRO_SUCURSALES"
+  },
+
+  "meses": {
+    "_nota": "MMAAAA -> {parte1_id, parte2_id}. Agregar cada mes con actualizar_manifest.py",
+    "2024-01": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-02": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-03": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-04": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-05": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-06": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-07": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-08": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-09": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-10": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-11": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2024-12": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-01": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-02": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-03": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-04": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-05": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-06": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-07": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-08": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-09": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-10": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-11": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2025-12": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2026-01": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2026-02": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2026-03": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"},
+    "2026-04": {"parte1_id": "COMPLETAR", "parte2_id": "COMPLETAR"}
+  }
+}

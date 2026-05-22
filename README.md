@@ -25,19 +25,21 @@ Mi unidad/
         └── maestro_sucursales_completo.xlsx
 ```
 
-### Pasos
+### Pasos para cualquier usuario
 
-1. Hacé click en **"Abrir en Colab"** arriba
-2. Ejecutá la **Celda 1** — instala dependencias y clona el repo (~1 minuto)
-3. En la **Celda 2** cambiá solo el mes (`MES = '042026'`) — las carpetas de Drive ya están configuradas
-4. Ejecutá la **Celda 3** y autorizá el acceso a Google Drive cuando te lo pide
-5. Ejecutá todo lo demás — descarga los archivos del mes automáticamente y genera el mapa
+1. Hacé click en **"Abrir en Colab"**
+2. (Opcional) Cambiá el mes en la primera celda — por defecto usa el último disponible
+3. **Ejecutar todo** (`Runtime → Run all`) — descarga los datos y genera todo en ~10 minutos
 
-**No hace falta copiar nada a tu Drive.** El notebook toma los datos directamente de las carpetas compartidas de INECO:
-- 2018-2023: [Google Drive histórico](https://drive.google.com/drive/folders/13GONeBs5lQCSUdBioHYk-8GhfDtIyliD)
-- 2024-presente: [Google Drive reciente](https://drive.google.com/drive/folders/1GNs9SrZ4BIoBsviBVWYYqRcsj4dwPF-I) (se actualiza cada mes)
+No requiere login, no requiere cargar archivos, no requiere configurar nada.
 
-Los outputs (mapa HTML, rankings PNG) se guardan automáticamente en `outputs/MMAAAA/` dentro de la carpeta de Drive.
+### Pasos para Santiago (una vez por mes, cuando salen los datos nuevos)
+
+1. Correr `python scripts/actualizar_manifest.py` — detecta automáticamente los archivos nuevos en Drive
+2. Hacer commit y push del `data/drive_manifest.json` actualizado
+3. Listo — el notebook de todos ya tiene el mes nuevo disponible
+
+> **¿Por qué un manifest?** Los archivos en Drive se identifican por ID interno (no por URL). El manifest mapea cada mes a sus IDs, permitiendo descargas directas sin autenticación.
 
 ---
 
