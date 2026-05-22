@@ -57,6 +57,16 @@ No requiere login, no requiere cargar archivos, no requiere configurar nada.
 
 ---
 
+## Informe de prensa
+
+El informe mensual de prensa en LaTeX está en [`overleaf/`](overleaf/):
+- `main.tex.txt` — plantilla del informe (compilar con pdfLaTeX en Overleaf)
+- `figuras/` — gráficos generados por el pipeline Python
+
+Ver [`overleaf/README.md`](overleaf/README.md) para instrucciones de uso y correcciones pendientes.
+
+---
+
 ## Instalación
 
 ```bash

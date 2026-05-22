@@ -89,6 +89,16 @@ python scripts/agente_interactivo.py
 python scripts/agente_interactivo.py --tarea "Generá el mapa del mes 2026-04"
 ```
 
+## Informe de prensa LaTeX
+
+El informe mensual de prensa ICM-UADE está en `overleaf/`:
+- `main.tex.txt` → renombrar a `main.tex` en Overleaf
+- `bibliografia.bib.txt` → renombrar a `bibliografia.bib`
+- `figuras/` → imágenes generadas por el pipeline Python
+- Ver `overleaf/README.md` para correcciones pendientes al informe de abril 2026
+
+Los gráficos se generan en `products/` y se copian manualmente a `overleaf/figuras/` para publicar.
+
 ## Datos de entrada necesarios
 
 Colocar en `data/masters/`:
