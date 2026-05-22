@@ -1,0 +1,58 @@
+name: Validar código Python
+
+on:
+  push:
+    paths:
+      - 'src/**/*.py'
+      - 'scripts/**/*.py'
+  pull_request:
+    paths:
+      - 'src/**/*.py'
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependencias mínimas
+        run: pip install -q pandas numpy openpyxl pyarrow folium branca matplotlib
+
+      - name: Verificar importaciones del paquete
+        run: |
+          cd src
+          python -c "
+          print('Verificando imports...')
+          from sepa.config.canasta import CANASTA_RAW, CANASTA_EANS, get_canasta_df
+          from sepa.config.geo import normalize_provincia, assign_barrio_caba, BARRIOS_CABA_BBOX
+          from sepa.config.cadenas import get_cadena_name, is_excluida
+          from sepa.config.settings import POPULATION_WEIGHTS, VALID_FROM
+
+          # Validar canasta
+          assert len(CANASTA_RAW) == 30, f'Canasta debe tener 30 productos, tiene {len(CANASTA_RAW)}'
+          assert len(CANASTA_EANS) == 30, f'Deben haber 30 EANs únicos'
+          df = get_canasta_df()
+          assert set(df.columns) >= {'ean_str', 'nombre', 'categoria', 'cantidad'}
+
+          # Validar pesos poblacionales
+          assert len(POPULATION_WEIGHTS) == 24, f'Deben haber 24 provincias'
+          total = sum(POPULATION_WEIGHTS.values())
+          assert 45_000_000 < total < 47_000_000, f'Población total fuera de rango: {total}'
+
+          # Validar barrios CABA
+          assert len(BARRIOS_CABA_BBOX) == 48, f'Deben haber 48 barrios, hay {len(BARRIOS_CABA_BBOX)}'
+          barrio = assign_barrio_caba(-34.575, -58.450)
+          assert barrio == 'Belgrano', f'Coordenadas de Belgrano no matchean: {barrio}'
+
+          # Validar cadenas
+          assert get_cadena_name(15, 1) == 'DIA'
+          assert get_cadena_name(10, 3) == 'Carrefour Express'
+          assert is_excluida(2013)  # Mercado Libre excluido
+          assert not is_excluida(15)  # DIA incluido
+
+          print('✓ Todas las validaciones pasaron')
+          from sepa.pipeline import loader, cleaner, enricher, aggregator
+          from sepa.analysis import basket, chains, timeseries
+          from sepa.viz import maps, charts, exports
+          print('✓ Todos los módulos importan correctamente')
+          "

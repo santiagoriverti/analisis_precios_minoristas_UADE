@@ -1,0 +1,53 @@
+name: Actualizar manifest mensualmente
+
+# Corre el primer día de cada mes a las 9:00 AM (hora Argentina)
+# También se puede disparar manualmente desde GitHub Actions
+on:
+  schedule:
+    - cron: '0 12 1 * *'   # 1º de cada mes, 12:00 UTC = 09:00 ART
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: 'Mes específico a agregar (YYYY-MM). Vacío = todos los nuevos.'
+        required: false
+        default: ''
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Instalar dependencias
+        run: pip install google-auth google-auth-oauthlib google-api-python-client
+
+      - name: Configurar credenciales de Google Drive
+        # Requiere el secret GOOGLE_SERVICE_ACCOUNT_KEY en el repo
+        # Ver docs/configurar_github_actions.md para cómo crearlo
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' > /tmp/credentials.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json" >> $GITHUB_ENV
+
+      - name: Actualizar manifest
+        run: |
+          if [ -n "${{ github.event.inputs.mes }}" ]; then
+            python scripts/actualizar_manifest.py --mes ${{ github.event.inputs.mes }}
+          else
+            python scripts/actualizar_manifest.py
+          fi
+
+      - name: Commit y push si hubo cambios
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/drive_manifest.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios en el manifest"
+          else
+            MES=$(date +'%Y-%m')
+            git commit -m "manifest: agregar datos de $MES [auto]"
+            git push
+            echo "✓ Manifest actualizado y pusheado"
+          fi

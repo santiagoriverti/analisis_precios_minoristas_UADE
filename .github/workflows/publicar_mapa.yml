@@ -1,0 +1,68 @@
+name: Publicar mapa en GitHub Pages
+
+# Se activa cuando se sube un HTML de mapa a products/
+on:
+  push:
+    paths:
+      - 'products/mapa_*.html'
+  workflow_dispatch:
+    inputs:
+      archivo_html:
+        description: 'Nombre del archivo HTML en products/ (ej: mapa_canasta_pais_042026_filtros.html)'
+        required: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar directorio de GitHub Pages
+        run: |
+          mkdir -p _site
+
+          # Copiar el HTML más reciente como index.html
+          ULTIMO_MAPA=$(ls -t products/mapa_*.html 2>/dev/null | head -1)
+
+          if [ -z "$ULTIMO_MAPA" ]; then
+            echo "⚠ No hay mapas en products/ todavía"
+            echo "<html><body><h1>ICM-UADE — Mapa de precios</h1><p>Próximamente.</p></body></html>" > _site/index.html
+          else
+            echo "Publicando: $ULTIMO_MAPA"
+            cp "$ULTIMO_MAPA" _site/index.html
+
+            # Listar todos los mapas disponibles en una página de archivo
+            echo "<html><head><title>ICM-UADE — Archivo de mapas</title></head><body>" > _site/archivo.html
+            echo "<h1>ICM-UADE — Archivo de mapas</h1><ul>" >> _site/archivo.html
+            for f in products/mapa_*.html; do
+              nombre=$(basename "$f")
+              echo "<li><a href='$nombre'>$nombre</a></li>" >> _site/archivo.html
+              cp "$f" "_site/$nombre"
+            done
+            echo "</ul></body></html>" >> _site/archivo.html
+          fi
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Subir artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Publicar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

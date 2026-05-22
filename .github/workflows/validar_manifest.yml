@@ -1,0 +1,66 @@
+name: Validar manifest de Drive
+
+on:
+  push:
+    paths:
+      - 'data/drive_manifest.json'
+  pull_request:
+    paths:
+      - 'data/drive_manifest.json'
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar estructura del manifest
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+
+          with open('data/drive_manifest.json') as f:
+              m = json.load(f)
+
+          errores = []
+
+          # Verificar estructura base
+          for key in ('folders', 'maestros', 'meses'):
+              if key not in m:
+                  errores.append(f"Falta sección '{key}'")
+
+          # Verificar maestros
+          maestros = m.get('maestros', {})
+          for k in ('productos_id', 'sucursales_id'):
+              val = maestros.get(k, '')
+              if not val or val in ('COMPLETAR', ''):
+                  errores.append(f"maestros.{k} no está cargado")
+
+          # Verificar meses
+          meses = {k: v for k, v in m.get('meses', {}).items() if not k.startswith('_')}
+          meses_completos = []
+          meses_incompletos = []
+
+          for mes, datos in meses.items():
+              if not isinstance(datos, dict):
+                  continue
+              p1 = datos.get('parte1_id', 'COMPLETAR')
+              p2 = datos.get('parte2_id', 'COMPLETAR')
+              if p1 not in ('COMPLETAR', '') and p2 not in ('COMPLETAR', ''):
+                  meses_completos.append(mes)
+              else:
+                  meses_incompletos.append(mes)
+
+          print(f"Meses con IDs cargados: {len(meses_completos)}")
+          print(f"  Disponibles: {sorted(meses_completos)}")
+          if meses_incompletos:
+              print(f"  Sin cargar:  {sorted(meses_incompletos)}")
+
+          if errores:
+              print(f"\nErrores encontrados:")
+              for e in errores:
+                  print(f"  ✗ {e}")
+              sys.exit(1)
+          else:
+              print(f"\n✓ Manifest válido")
+          EOF
