@@ -164,49 +164,97 @@ def iter_semester_csvgz(
 
 def _read_csvgz_wide(gz_bytes: bytes, ean_filter: set[str] | None,
                      label: str = "") -> pd.DataFrame | None:
-    """Lee un CSV.GZ en formato ancho (columnas precio_YYYYMMDD) y convierte a largo."""
-    import gzip
+    """Lee un CSV.GZ en formato ancho (columnas precio_YYYYMMDD) y convierte a largo.
 
-    try:
-        data = gzip.decompress(gz_bytes)
-    except Exception as e:
-        log.warning("Error descomprimiendo %s: %s", label, e)
+    Usa lectura por chunks para evitar materializar el CSV completo (~1.5 GB) en memoria.
+    Con ean_filter, los chunks descartados se liberan inmediatamente.
+    Solo se conservan las columnas esenciales (branch IDs + ean_norm + precios).
+    """
+    _ESSENTIAL = {"id_comercio", "id_bandera", "id_sucursal"}
+    _CHUNKSIZE  = 100_000
+
+    chunks_filtrados: list[pd.DataFrame] = []
+    ean_col: str | None = None
+
+    for enc in ("utf-8", "latin-1", "cp1252"):
+        try:
+            reader = pd.read_csv(
+                io.BytesIO(gz_bytes),
+                compression="gzip",
+                sep=None,                 # auto-detecta , vs |
+                engine="python",
+                dtype=str,
+                on_bad_lines="skip",
+                encoding=enc,
+                chunksize=_CHUNKSIZE,
+            )
+            for chunk in reader:
+                chunk.columns = [c.lower().strip() for c in chunk.columns]
+
+                # Eliminar filas de metadata ("última actualización …")
+                first_col = chunk.columns[0]
+                mask_meta = chunk[first_col].astype(str).str.lower().str.startswith("última", na=False)
+                if mask_meta.any():
+                    chunk = chunk[~mask_meta]
+                if chunk.empty:
+                    continue
+
+                # Detectar columna EAN en el primer chunk no vacío
+                if ean_col is None:
+                    ean_col = next(
+                        (c for c in chunk.columns if "id_producto" in c or "productos_ean" in c),
+                        None,
+                    )
+                    if ean_col is None:
+                        log.warning("Sin columna EAN en %s (columnas: %s)", label, list(chunk.columns)[:8])
+                        break
+
+                chunk["ean_norm"] = chunk[ean_col].astype(str).str.strip().str.lstrip("0")
+
+                if ean_filter:
+                    chunk = chunk[chunk["ean_norm"].isin(ean_filter)]
+                if chunk.empty:
+                    continue
+
+                # Conservar solo columnas esenciales + precios  → reduce ancho de ~15 a ~5 cols
+                price_cols = [c for c in chunk.columns if re.match(r"precio_\d{8}$", c)]
+                essential  = [c for c in chunk.columns if c in _ESSENTIAL or c == "ean_norm"]
+                if not essential or not price_cols:
+                    continue
+
+                chunks_filtrados.append(chunk[essential + price_cols].copy())
+
+            break  # encoding funcionó
+        except UnicodeDecodeError:
+            ean_col = None
+            chunks_filtrados = []
+            continue
+        except Exception as e:
+            log.warning("Error leyendo %s con encoding %s: %s", label, enc, e)
+            ean_col = None
+            chunks_filtrados = []
+            continue
+
+    if not chunks_filtrados:
+        log.warning("Sin datos de canasta en %s", label)
         return None
 
-    df = _read_csv_from_bytes(data, label)
-    if df is None or df.empty:
-        return None
+    df = pd.concat(chunks_filtrados, ignore_index=True)
+    del chunks_filtrados
+    gc.collect()
 
-    df.columns = [c.lower().strip() for c in df.columns]
-
-    # Detectar columna EAN
-    ean_col = next(
-        (c for c in df.columns if "id_producto" in c or "productos_ean" in c), None
-    )
-    if ean_col is None:
-        log.warning("Sin columna EAN en %s (columnas: %s)", label, list(df.columns)[:8])
-        return None
-
-    df["ean_norm"] = df[ean_col].astype(str).str.strip().str.lstrip("0")
-
-    if ean_filter:
-        df = df[df["ean_norm"].isin(ean_filter)]
-    if df.empty:
-        return None
-
-    # Columnas de precio (formato precio_YYYYMMDD)
     price_cols = [c for c in df.columns if re.match(r"precio_\d{8}$", c)]
-    if not price_cols:
-        log.warning("Sin columnas de precio en %s", label)
-        return None
+    id_cols    = [c for c in df.columns if not re.match(r"precio_\d{8}$", c)]
 
-    id_cols = [c for c in df.columns if not re.match(r"precio_\d{8}$", c)]
     df_long = df.melt(
         id_vars=id_cols,
         value_vars=price_cols,
         var_name="fecha_col",
         value_name="precio_raw",
     )
+    del df
+    gc.collect()
+
     df_long["fecha"] = pd.to_datetime(
         df_long["fecha_col"].str.replace("precio_", ""), format="%Y%m%d", errors="coerce"
     )
